@@ -78,6 +78,7 @@
     <ClCompile Include="Z502.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="addition.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="protos.h" />
     <ClInclude Include="syscalls.h" />

@@ -29,6 +29,8 @@
 #include             "string.h"
 #include             <stdlib.h>
 
+void OSCreateProcess(long *Test_To_Run);
+
 //  Allows the OS and the hardware to agree on where faults occur
 extern void *TO_VECTOR[];
 
@@ -222,6 +224,13 @@ void osInit(int argc, char *argv[]) {
 
  	} // End of handler for sample code - This routine should never return here
 
+	OSCreateProcess(test1a);
+}                                               // End of osInit
+
+void OSCreateProcess(long *Test_To_Run){
+	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
+	MEMORY_MAPPED_IO mmio;
+
 	//  By default test0 runs if no arguments are given on the command line
 	//  Creation and Switching of contexts should be done in a separate routine.
 	//  This should be done by a "OsMakeProcess" routine, so that
@@ -229,8 +238,8 @@ void osInit(int argc, char *argv[]) {
 
 	mmio.Mode = Z502InitializeContext;
 	mmio.Field1 = 0;
-	mmio.Field2 = (long) test1a;//test 1a
-	mmio.Field3 = (long) PageTable;
+	mmio.Field2 = (long)Test_To_Run;//test 1a
+	mmio.Field3 = (long)PageTable;
 
 	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
 	mmio.Mode = Z502StartContext;
@@ -239,4 +248,4 @@ void osInit(int argc, char *argv[]) {
 	mmio.Field2 = START_NEW_CONTEXT_AND_SUSPEND;
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
 
-}                                               // End of osInit
+}

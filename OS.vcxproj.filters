@@ -44,5 +44,8 @@
     <ClInclude Include="z502.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="addition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
