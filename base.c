@@ -58,13 +58,8 @@ void InterruptHandler(void) {
 	DeviceID = mmio.Field1;
 	//Status = mmio.Field2;
 
-	/** REMOVE THE NEXT SIX LINES **/
-	how_many_interrupt_entries++; /** TEMP **/
-	if (remove_this_in_your_code && (how_many_interrupt_entries < 40)) {
-		printf("Interrupt_handler: Found device ID %d with status %d\n",
-				(int) mmio.Field1, (int) mmio.Field2);
-	}
 
+	
 	// Clear out this device - we're done with it
 	mmio.Mode = Z502ClearInterruptStatus;
 	mmio.Field1 = DeviceID;
@@ -115,7 +110,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	short i;
 
 	MEMORY_MAPPED_IO mmio;        // Structure used for hardware interface
-	INT32 Temp_Clock;
+	INT32 Temp_Clock; //for SYSNUM_GET_TIME_OF_DAY
+	INT32 Sleep_Time; //for SYSNUM_SLEEP
 
 
 	call_type = (short) SystemCallData->SystemCallNumber;
@@ -145,6 +141,21 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			MEM_WRITE(Z502Halt, 0);
 
 			//Z502_HALT();
+			break;
+		case SYSNUM_SLEEP:
+			Sleep_Time = SystemCallData->Argument[0];
+			// Start the timer - here's the sequence to use
+			mmio.Mode = Z502Start;
+			mmio.Field1 = Sleep_Time;   // You pick the time units
+			mmio.Field2 = mmio.Field3 = 0;
+			MEM_WRITE(Z502Timer, &mmio);
+
+			// Go idle until the interrupt occurs
+			mmio.Mode = Z502Action;
+			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
+			MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
+			DoSleep(10);                       // Give it a little more time
+
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -218,7 +229,7 @@ void osInit(int argc, char *argv[]) {
 
 	mmio.Mode = Z502InitializeContext;
 	mmio.Field1 = 0;
-	mmio.Field2 = (long) test0;
+	mmio.Field2 = (long) test1a;//test 1a
 	mmio.Field3 = (long) PageTable;
 
 	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
