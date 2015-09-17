@@ -28,6 +28,7 @@
 #include             "protos.h"
 #include             "string.h"
 #include             <stdlib.h>
+#include             "addition.h"
 
 void OSCreateProcess(long *Test_To_Run);
 
@@ -231,6 +232,8 @@ void OSCreateProcess(long *Test_To_Run){
 	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
 	MEMORY_MAPPED_IO mmio;
 
+	Process_Control_Block PCB;
+	PCB.Context = Test_To_Run;
 	//  By default test0 runs if no arguments are given on the command line
 	//  Creation and Switching of contexts should be done in a separate routine.
 	//  This should be done by a "OsMakeProcess" routine, so that
@@ -238,7 +241,7 @@ void OSCreateProcess(long *Test_To_Run){
 
 	mmio.Mode = Z502InitializeContext;
 	mmio.Field1 = 0;
-	mmio.Field2 = (long)Test_To_Run;//test 1a
+	mmio.Field2 = (long)PCB.Context;//test 1a
 	mmio.Field3 = (long)PageTable;
 
 	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
