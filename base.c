@@ -114,7 +114,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 
 	MEMORY_MAPPED_IO mmio;        // Structure used for hardware interface
 	INT32 Temp_Clock; //for SYSNUM_GET_TIME_OF_DAY
-	INT32 Sleep_Time; //for SYSNUM_SLEEP
+	long Sleep_Time; //for SYSNUM_SLEEP
 
 
 	call_type = (short) SystemCallData->SystemCallNumber;
