@@ -1,7 +1,7 @@
 #include             "global.h"
 
 typedef struct  {
-	long*        Context;
+	long         Context;
 	long         ProcessState;
 	INT32        ProcessID;
 	long         ProgramCounter;
