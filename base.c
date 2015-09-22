@@ -229,10 +229,11 @@ void osInit(int argc, char *argv[]) {
 }                                               // End of osInit
 
 void OSCreateProcess(long *Test_To_Run){
+
 	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
 	MEMORY_MAPPED_IO mmio;
 
-	Process_Control_Block PCB;
+	struct Process_Control_Block PCB;
 
 	//  By default test0 runs if no arguments are given on the command line
 	//  Creation and Switching of contexts should be done in a separate routine.

@@ -71,11 +71,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="addition.cpp" />
     <ClCompile Include="base.c" />
     <ClCompile Include="sample.c" />
     <ClCompile Include="StatePrinter.c" />
     <ClCompile Include="Test.c" />
     <ClCompile Include="Z502.c" />
+    <ClCompile Include="源.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addition.h" />
