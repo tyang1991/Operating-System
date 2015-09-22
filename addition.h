@@ -1,7 +1,7 @@
 #include             "global.h"
 
 struct Process_Control_Block  {
-	long         Context;
+	long         ContextID;
 	long         ProcessState;
 	INT32        ProcessID;
 	long         ProgramCounter;
@@ -19,6 +19,9 @@ struct Timer_Queue_Element{
 
 struct Timer_Queue_Header{
 	struct Timer_Queue_Element* First_Element;
-	struct Timer_Queue_Element* Last_Element;
 	int Element_Number;
 };
+
+void initTimerQueue();
+void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime);
+void deTimerQueue();

@@ -178,6 +178,9 @@ void osInit(int argc, char *argv[]) {
 	INT32 i;
 	MEMORY_MAPPED_IO mmio;
 
+	//init Queues
+	initTimerQueue();
+
   // Demonstrates how calling arguments are passed thru to here       
 
     printf( "Program called with %d arguments:", argc );
@@ -247,7 +250,7 @@ void OSCreateProcess(long *Test_To_Run){
 
 	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
 
-	PCB.Context = mmio.Field1;
+	PCB.ContextID = mmio.Field1;
 
 	mmio.Mode = Z502StartContext;
 	// Field1 contains the value of the context returned in the last call

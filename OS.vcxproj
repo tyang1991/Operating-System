@@ -71,7 +71,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="addition.cpp" />
+    <ClCompile Include="addition.c" />
     <ClCompile Include="base.c" />
     <ClCompile Include="sample.c" />
     <ClCompile Include="StatePrinter.c" />

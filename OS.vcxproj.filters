@@ -33,7 +33,7 @@
     <ClCompile Include="源.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="addition.cpp">
+    <ClCompile Include="addition.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,18 +1,20 @@
 #include "addition.h"
+#include "stdio.h"
 
 struct Timer_Queue_Header timerQueue;
+//timerQueue.Element_Number = 0;
 
 void timerQueueInit(){
 	timerQueue.Element_Number = 0;
 }
 
-void insertTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
+void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 	struct Timer_Queue_Element newElement;
+	newElement.WakeUpTime = wakeUpTime;
+	newElement.PCB = PCB;
 	
 	if (timerQueue.Element_Number == 0){
 		//build timer queue element
-		newElement.WakeUpTime = wakeUpTime;
-		newElement.PCB = PCB;
 		newElement.Prev_Element = &newElement;
 		newElement.Next_Element = &newElement;
 		//make change in timer queue
@@ -20,9 +22,6 @@ void insertTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 		timerQueue.First_Element = &newElement;
 	}
 	else{
-		newElement.WakeUpTime = wakeUpTime;
-		newElement.PCB = PCB;
-
 		struct Timer_Queue_Element *checkingElement = timerQueue.First_Element;
 
 		for (int i = 0; i < timerQueue.Element_Number; i++){
@@ -45,7 +44,23 @@ void insertTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 				checkingElement->Next_Element = &newElement;
 			}
 		}
+		//free temp pointer
+		free(checkingElement);
 		//make change to Element_Number in timerQueue
 		timerQueue.Element_Number += 1;
+	}
+}
+
+void deTimerQueue(){
+	if (timerQueue.Element_Number == 0){
+		printf("There is no element in timer queue\n");
+	}
+	else if (timerQueue.Element_Number == 1){
+		timerQueue.First_Element = NULL;
+		timerQueue.Element_Number -= 1;
+	}
+	else{
+		timerQueue.First_Element = timerQueue.First_Element->Next_Element;
+		timerQueue.Element_Number -= 1;
 	}
 }
