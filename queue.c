@@ -2,7 +2,7 @@
 #include "stdio.h"
 
 struct Timer_Queue timerQueue;
-struct PCB_Hub pcbHub;
+struct PCB_Table pcbTable;
 
 void initTimerQueue(){
 	timerQueue.Element_Number = 0;
@@ -65,20 +65,50 @@ void deTimerQueue(){
 	}
 }
 
-void initPCBHub(){
-	pcbHub.Element_Number = 0;
+void initPCBTable(){
+	pcbTable.Element_Number = 0;
 }
 
-void enPCBHub(struct Process_Control_Block *PCB){
-	struct PCB_Hub_Element newElement;
+void enPCBTable(struct Process_Control_Block *PCB){
+	struct PCB_Table_Element newElement;
 	newElement.PCB = PCB;
 
 	//insert element as the first element
-	if (pcbHub.Element_Number == 0){
-		pcbHub.First_Element = &newElement;
+	if (pcbTable.Element_Number == 0){
+		pcbTable.First_Element = &newElement;
 	}
 	else{
-		newElement.Next_Element = pcbHub.First_Element;
-		pcbHub.First_Element = &newElement;
+		newElement.Next_Element = pcbTable.First_Element;
+		pcbTable.First_Element = &newElement;
+	}
+}
+
+struct Process_Control_Block *findPCB(long contextID){
+	//if PCB table is empty, return null PCB
+	if (pcbTable.Element_Number == 0){
+		struct Process_Control_Block nullPCB;
+		printf("empty pcbTable, nullPCB returned\n");
+		return &nullPCB;
+	}
+
+	//create a temp pointer to check elements
+	struct PCB_Table_Element *checkingElement = pcbTable.First_Element;
+	
+	//check Element_Number-1 times because last element doesn't have a pointer to next
+	for (int i = 0; i < pcbTable.Element_Number; i++){
+		if (checkingElement->PCB->ContextID == contextID){
+			return checkingElement->PCB;
+		}
+		else{
+			//if not found, return null PCB
+			if (i == pcbTable.Element_Number - 1){
+				struct Process_Control_Block nullPCB;
+				printf("PCB not found, nullPCB returned\n");
+				return &nullPCB;
+			}
+			else{
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
 	}
 }

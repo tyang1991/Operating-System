@@ -147,9 +147,11 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			//Z502_HALT();
 			break;
 		case SYSNUM_SLEEP:
+			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
 			GET_TIME_OF_DAY(&ReturnedTime);
 			WakeUpTime = ReturnedTime + Sleep_Time;
+
 
 			// Start the timer - here's the sequence to use
 			mmio.Mode = Z502Start;
