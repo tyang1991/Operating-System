@@ -71,16 +71,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="addition.c" />
+    <ClCompile Include="queue.c" />
     <ClCompile Include="base.c" />
     <ClCompile Include="sample.c" />
     <ClCompile Include="StatePrinter.c" />
     <ClCompile Include="Test.c" />
     <ClCompile Include="Z502.c" />
-    <ClCompile Include="源.cpp" />
+    <ClCompile Include="processMng.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="addition.h" />
+    <ClInclude Include="processMng.h" />
+    <ClInclude Include="queue.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="protos.h" />
     <ClInclude Include="syscalls.h" />

@@ -30,10 +30,10 @@
     <ClCompile Include="Z502.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="源.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="queue.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="addition.c">
+    <ClCompile Include="processMng.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,7 +50,10 @@
     <ClInclude Include="z502.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="addition.h">
+    <ClInclude Include="queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="processMng.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -28,7 +28,7 @@
 #include             "protos.h"
 #include             "string.h"
 #include             <stdlib.h>
-#include             "addition.h"
+#include             "queue.h"
 
 void OSCreateProcess(long *Test_To_Run);
 
@@ -112,10 +112,11 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	static short do_print = 10;
 	short i;
 
-	MEMORY_MAPPED_IO mmio;        // Structure used for hardware interface
+	MEMORY_MAPPED_IO mmio; //for hardware interface
 	INT32 Temp_Clock; //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time; //for SYSNUM_SLEEP
-
+	long ReturnedTime; //for SYSNUM_SLEEP
+	long WakeUpTime; //for SYSNUM_SLEEP
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -147,6 +148,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			break;
 		case SYSNUM_SLEEP:
 			Sleep_Time = SystemCallData->Argument[0];
+			GET_TIME_OF_DAY(&ReturnedTime);
+			WakeUpTime = ReturnedTime + Sleep_Time;
+
 			// Start the timer - here's the sequence to use
 			mmio.Mode = Z502Start;
 			mmio.Field1 = Sleep_Time;   // You pick the time units

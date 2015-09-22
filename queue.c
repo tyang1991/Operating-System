@@ -1,10 +1,10 @@
-#include "addition.h"
+#include "queue.h"
 #include "stdio.h"
 
-struct Timer_Queue_Header timerQueue;
-//timerQueue.Element_Number = 0;
+struct Timer_Queue timerQueue;
+struct PCB_Hub pcbHub;
 
-void timerQueueInit(){
+void initTimerQueue(){
 	timerQueue.Element_Number = 0;
 }
 
@@ -62,5 +62,23 @@ void deTimerQueue(){
 	else{
 		timerQueue.First_Element = timerQueue.First_Element->Next_Element;
 		timerQueue.Element_Number -= 1;
+	}
+}
+
+void initPCBHub(){
+	pcbHub.Element_Number = 0;
+}
+
+void enPCBHub(struct Process_Control_Block *PCB){
+	struct PCB_Hub_Element newElement;
+	newElement.PCB = PCB;
+
+	//insert element as the first element
+	if (pcbHub.Element_Number == 0){
+		pcbHub.First_Element = &newElement;
+	}
+	else{
+		newElement.Next_Element = pcbHub.First_Element;
+		pcbHub.First_Element = &newElement;
 	}
 }
