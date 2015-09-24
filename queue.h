@@ -30,6 +30,10 @@ struct Timer_Queue{
 	struct Timer_Queue_Element *First_Element;
 };
 
+struct Timer_Queue *timerQueue;
+struct PCB_Table *pcbTable;
+struct Process_Control_Block *currentPCB;
+
 //timer queue functions
 void initTimerQueue();
 void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime);
@@ -37,4 +41,5 @@ void deTimerQueue();
 
 //page table functions
 void initPCBTable();
-void enPCBTableb(struct Process_Control_Block *PCB);
+void enPCBTable(struct Process_Control_Block *PCB);
+struct Process_Control_Block *findPCB(long contextID);

@@ -29,6 +29,7 @@
 #include             "string.h"
 #include             <stdlib.h>
 #include             "queue.h"
+#include             "processMng.h"
 
 void OSCreateProcess(long *Test_To_Run);
 
@@ -107,16 +108,28 @@ void FaultHandler(void) {
  with the amount of data.
  ************************************************************************/
 
+void testaaa(){
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	//get current context ID
+	mmio.Mode = Z502GetCurrentContext;
+	mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+	MEM_READ(Z502Context, &mmio);
+	printf("returned Context ID-3: %d\n", mmio.Field1);
+}
+
+
 void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	short call_type;
 	static short do_print = 10;
 	short i;
 
-	MEMORY_MAPPED_IO mmio; //for hardware interface
-	INT32 Temp_Clock; //for SYSNUM_GET_TIME_OF_DAY
-	long Sleep_Time; //for SYSNUM_SLEEP
-	long ReturnedTime; //for SYSNUM_SLEEP
-	long WakeUpTime; //for SYSNUM_SLEEP
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
+	long Sleep_Time;          //for SYSNUM_SLEEP
+	long ReturnedTime;        //for SYSNUM_SLEEP
+	long WakeUpTime;          //for SYSNUM_SLEEP
+	long returnedContextID;   //for SYSNUM_SLEEP
+	struct Process_Control_Block *returnedPCB;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -137,22 +150,38 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			MEM_READ(Z502Clock, &mmio);
 			Temp_Clock = mmio.Field1;
 			*SystemCallData->Argument[0] = Temp_Clock;
-			//ZCALL(MEM_READ(Z502ClockStatus, &Time));
-			//*(INT32 *)Z502_ARG1.PTR = Time;
+			/*
+			//get current context ID
+			mmio.Mode = Z502GetCurrentContext;
+			mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+			MEM_READ(Z502Context, &mmio);
+			printf("returned Context ID-1: %d\n", mmio.Field1);*/
 			break;
 			// terminate system call
 		case SYSNUM_TERMINATE_PROCESS:
 			MEM_WRITE(Z502Halt, 0);
-
-			//Z502_HALT();
 			break;
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
 			GET_TIME_OF_DAY(&ReturnedTime);
 			WakeUpTime = ReturnedTime + Sleep_Time;
+			printf("wake up time: %d\n", WakeUpTime);
 
+			returnedContextID = pcbTable->First_Element->PCB->ContextID;
+			printf("3. contextID: %d\n", pcbTable->First_Element->PCB->ContextID);
+			returnedPCB = findPCB(returnedContextID);
+			printf("4. contextID: %d\n", returnedPCB->ContextID);
 
+			StartTimer();
+/*			
+			//get current context ID
+			mmio.Mode = Z502GetCurrentContext;
+			mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+			MEM_READ(Z502Context, &mmio);
+			returnedContextID = mmio.Field1;
+			printf("returned Context ID-2: %d\n", returnedContextID);
+*/
 			// Start the timer - here's the sequence to use
 			mmio.Mode = Z502Start;
 			mmio.Field1 = Sleep_Time;   // You pick the time units
@@ -185,7 +214,11 @@ void osInit(int argc, char *argv[]) {
 	MEMORY_MAPPED_IO mmio;
 
 	//init Queues
+	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));
+	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
+	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	initTimerQueue();
+	initPCBTable();
 
   // Demonstrates how calling arguments are passed thru to here       
 
@@ -242,7 +275,7 @@ void OSCreateProcess(long *Test_To_Run){
 	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
 	MEMORY_MAPPED_IO mmio;
 
-	struct Process_Control_Block PCB;
+	struct Process_Control_Block *newPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 
 	//  By default test0 runs if no arguments are given on the command line
 	//  Creation and Switching of contexts should be done in a separate routine.
@@ -256,8 +289,11 @@ void OSCreateProcess(long *Test_To_Run){
 
 	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
 
-	PCB.ContextID = mmio.Field1;
-
+	newPCB->ContextID = mmio.Field1;
+	printf("1. new PCB contextID: %d\n", newPCB->ContextID); //for test
+	enPCBTable(newPCB);
+	printf("2. new PCB contextID: %d\n", pcbTable->First_Element->PCB->ContextID); //for test
+	
 	mmio.Mode = Z502StartContext;
 	// Field1 contains the value of the context returned in the last call
 	// Suspends this current thread
