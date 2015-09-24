@@ -164,36 +164,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
-			GET_TIME_OF_DAY(&ReturnedTime);
-			WakeUpTime = ReturnedTime + Sleep_Time;
-			printf("wake up time: %d\n", WakeUpTime);
 
-			returnedContextID = pcbTable->First_Element->PCB->ContextID;
-			printf("3. contextID: %d\n", pcbTable->First_Element->PCB->ContextID);
-			returnedPCB = findPCB(returnedContextID);
-			printf("4. contextID: %d\n", returnedPCB->ContextID);
-
-			StartTimer();
-/*			
-			//get current context ID
-			mmio.Mode = Z502GetCurrentContext;
-			mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
-			MEM_READ(Z502Context, &mmio);
-			returnedContextID = mmio.Field1;
-			printf("returned Context ID-2: %d\n", returnedContextID);
-*/
-			// Start the timer - here's the sequence to use
-			mmio.Mode = Z502Start;
-			mmio.Field1 = Sleep_Time;   // You pick the time units
-			mmio.Field2 = mmio.Field3 = 0;
-			MEM_WRITE(Z502Timer, &mmio);
-
-			// Go idle until the interrupt occurs
-			mmio.Mode = Z502Action;
-			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-			MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
-			DoSleep(10);                       // Give it a little more time
-
+			StartTimer(Sleep_Time);
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");

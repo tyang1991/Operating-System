@@ -1,1 +1,1 @@
-void StartTimer();
+void StartTimer(long SleepTime);
