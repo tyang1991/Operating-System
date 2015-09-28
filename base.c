@@ -116,7 +116,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time;          //for SYSNUM_SLEEP
-	long WakeUpTime;          //for SYSNUM_SLEEP
 	long returnedContextID;   //for SYSNUM_SLEEP
 	struct Process_Control_Block *returnedPCB;
 
@@ -147,9 +146,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
-			WakeUpTime = CurrentTime() + Sleep_Time;
-			currentPCB->WakeUpTime = WakeUpTime;
-			enTimerQueue(currentPCB, WakeUpTime);
+			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
+
+			enTimerQueue(currentPCB);
 			ResetTimer();
 
 			// Go idle until the interrupt occurs

@@ -7,9 +7,9 @@ void initTimerQueue(){
 	timerQueue->Element_Number = 0;
 }
 
-void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
+void enTimerQueue(struct Process_Control_Block *PCB){
 	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
-	newElement->WakeUpTime = wakeUpTime;
+	//newElement->WakeUpTime = wakeUpTime;
 	newElement->PCB = PCB;
 	
 	if (timerQueue->Element_Number == 0){
@@ -24,7 +24,7 @@ void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 		struct Timer_Queue_Element *checkingElement = timerQueue->First_Element;
 
 		for (int i = 0; i < timerQueue->Element_Number; i++){
-			if (newElement->WakeUpTime < checkingElement->WakeUpTime){
+			if (newElement->PCB->WakeUpTime < checkingElement->PCB->WakeUpTime){
 				//change list links
 				checkingElement->Prev_Element->Next_Element = newElement;
 				checkingElement->Prev_Element = newElement;
@@ -43,8 +43,6 @@ void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 				checkingElement->Next_Element = newElement;
 			}
 		}
-		//free temp pointer
-		free(checkingElement);
 		//make change to Element_Number in timerQueue
 		timerQueue->Element_Number += 1;
 	}

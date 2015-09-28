@@ -21,7 +21,6 @@ struct PCB_Table {
 
 //structs for Timer Queue
 struct Timer_Queue_Element{
-	long WakeUpTime;
 	struct Process_Control_Block *PCB;
 	struct Timer_Queue_Element *Prev_Element;
 	struct Timer_Queue_Element *Next_Element;
@@ -38,7 +37,7 @@ struct Process_Control_Block *currentPCB;
 
 //timer queue functions
 void initTimerQueue();
-void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime);
+void enTimerQueue(struct Process_Control_Block *PCB);
 void deTimerQueue();
 
 //page table functions
