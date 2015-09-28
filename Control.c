@@ -17,7 +17,6 @@ void StartTimer(SleepTime){
 //	GET_TIME_OF_DAY(&currentTime);
 
 	//put current PCB into timer Queue
-	printf("currentTime:%d\n", currentTime);
 	long wakeUpTime = SleepTime + currentTime;
 	enTimerQueue(currentPCB, wakeUpTime);
 

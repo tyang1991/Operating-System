@@ -29,7 +29,7 @@
 #include             "string.h"
 #include             <stdlib.h>
 #include             "queue.h"
-#include             "processMng.h"
+#include             "Control.h"
 
 void OSCreateProcess(long *Test_To_Run);
 
@@ -62,7 +62,9 @@ void InterruptHandler(void) {
 	DeviceID = mmio.Field1;
 	//Status = mmio.Field2;
 
-
+	printf("here is in the interrupt handler\n");
+	deTimerQueue();
+	printf("Element in timer Q: %d\n", timerQueue->Element_Number);
 	
 	// Clear out this device - we're done with it
 	mmio.Mode = Z502ClearInterruptStatus;
@@ -108,16 +110,6 @@ void FaultHandler(void) {
  with the amount of data.
  ************************************************************************/
 
-void testaaa(){
-	MEMORY_MAPPED_IO mmio;    //for hardware interface
-	//get current context ID
-	mmio.Mode = Z502GetCurrentContext;
-	mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
-	MEM_READ(Z502Context, &mmio);
-	printf("returned Context ID-3: %d\n", mmio.Field1);
-}
-
-
 void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	short call_type;
 	static short do_print = 10;
@@ -150,12 +142,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			MEM_READ(Z502Clock, &mmio);
 			Temp_Clock = mmio.Field1;
 			*SystemCallData->Argument[0] = Temp_Clock;
-			/*
-			//get current context ID
-			mmio.Mode = Z502GetCurrentContext;
-			mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
-			MEM_READ(Z502Context, &mmio);
-			printf("returned Context ID-1: %d\n", mmio.Field1);*/
 			break;
 			// terminate system call
 		case SYSNUM_TERMINATE_PROCESS:
@@ -264,7 +250,7 @@ void OSCreateProcess(long *Test_To_Run){
 	newPCB->ContextID = mmio.Field1;
 	printf("1. new PCB contextID: %d\n", newPCB->ContextID); //for test
 	enPCBTable(newPCB);
-	printf("2. new PCB contextID: %d\n", pcbTable->First_Element->PCB->ContextID); //for test
+//	printf("2. new PCB contextID: %d\n", pcbTable->First_Element->PCB->ContextID); //for test
 	
 	mmio.Mode = Z502StartContext;
 	// Field1 contains the value of the context returned in the last call

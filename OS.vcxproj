@@ -77,10 +77,10 @@
     <ClCompile Include="StatePrinter.c" />
     <ClCompile Include="Test.c" />
     <ClCompile Include="Z502.c" />
-    <ClCompile Include="processMng.c" />
+    <ClCompile Include="Control.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="processMng.h" />
+    <ClInclude Include="Control.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="protos.h" />
