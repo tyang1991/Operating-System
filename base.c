@@ -158,6 +158,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			DoSleep(10);                       // Give it a little more time
 			break;
 		case SYSNUM_CREATE_PROCESS:
+			OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
+							SystemCallData->Argument[2], SystemCallData->Argument[3], 
+							SystemCallData->Argument[4]);
 
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -230,6 +233,10 @@ void osInit(int argc, char *argv[]) {
 
  	} // End of handler for sample code - This routine should never return here
 
-	OSCreateProcess(test1a);
+//	char sss[32] = {(long*) "test1a_a" };
+//	printf("1.%s\n", (long*) "test1a_a");
+
+	long ErrorReturned;
+	OSCreateProcess((long*)"test1b", (long*)test1b, (long*)3, (long*)1, (long*)&ErrorReturned);
 	OSStartProcess(pcbTable->First_Element->PCB);
 }                                               // End of osInit

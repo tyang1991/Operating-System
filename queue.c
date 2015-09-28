@@ -76,6 +76,8 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 		for (int i = 0; i < timerQueue->Element_Number; i++){
 			if (newElement->PCB->WakeUpTime < checkingElement->PCB->WakeUpTime){
 				//change list links
+				newElement->Prev_Element = checkingElement->Prev_Element;
+				newElement->Next_Element = checkingElement;
 				checkingElement->Prev_Element->Next_Element = newElement;
 				checkingElement->Prev_Element = newElement;
 				//change First_Element in timerQueue if newElement is first
@@ -89,6 +91,8 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 			}
 			//change Last_Element in timerQueue if newElement is last
 			if (i == timerQueue->Element_Number - 1){
+				newElement->Prev_Element = checkingElement;
+				newElement->Next_Element = checkingElement->Next_Element;
 				checkingElement->Next_Element->Prev_Element = newElement;
 				checkingElement->Next_Element = newElement;
 			}
@@ -136,6 +140,8 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		for (int i = 0; i < readyQueue->Element_Number; i++){
 			if (newElement->PCB->Priority < checkingElement->PCB->Priority){
 				//change list links
+				newElement->Prev_Element = checkingElement->Prev_Element;
+				newElement->Next_Element = checkingElement;
 				checkingElement->Prev_Element->Next_Element = newElement;
 				checkingElement->Prev_Element = newElement;
 				//change First_Element in timerQueue if newElement is first
@@ -149,6 +155,8 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 			}
 			//change Last_Element in timerQueue if newElement is last
 			if (i == readyQueue->Element_Number - 1){
+				newElement->Prev_Element = checkingElement;
+				newElement->Next_Element = checkingElement->Next_Element;
 				checkingElement->Next_Element->Prev_Element = newElement;
 				checkingElement->Next_Element = newElement;
 			}

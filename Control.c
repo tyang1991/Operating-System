@@ -24,7 +24,11 @@ void ResetTimer(){
 	}
 }
 
-void OSCreateProcess(long *Test_To_Run){
+void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
+	//check input
+	if ((int)Priority < 0){
+		*ErrorReturned = 1L;
+	}
 
 	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
 	MEMORY_MAPPED_IO mmio;
@@ -38,7 +42,12 @@ void OSCreateProcess(long *Test_To_Run){
 	MEM_WRITE(Z502Context, &mmio);   // Initialize Context
 
 	newPCB->ContextID = mmio.Field1;
+	newPCB->Priority = (int)Priority;
+	newPCB->ProcessID = (long)ProcessID;
+
+	//put new PCB into PCB Table and Ready Queue
 	enPCBTable(newPCB);
+	enReadyQueue(newPCB);
 }
 
 void OSStartProcess(struct Process_Control_Block* PCB){

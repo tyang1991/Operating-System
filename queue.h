@@ -3,7 +3,7 @@
 struct Process_Control_Block  {
 	long         ContextID;
 	char         ProcessName[64];
-	INT32        ProcessID;
+	int          ProcessID;
 	long         ProcessState;
 	long         WakeUpTime;
 	int          Priority;
