@@ -38,7 +38,6 @@ void OSCreateProcess(long *Test_To_Run){
 	MEM_WRITE(Z502Context, &mmio);   // Initialize Context
 
 	newPCB->ContextID = mmio.Field1;
-	printf("1. new PCB contextID: %d\n", newPCB->ContextID); //for test
 	enPCBTable(newPCB);
 }
 

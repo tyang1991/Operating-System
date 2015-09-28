@@ -102,13 +102,6 @@ void test0(void) {
  **************************************************************************/
 
 void test1a(void) {
-/*
-	MEMORY_MAPPED_IO mmio;
-	mmio.Mode = Z502GetCurrentContext;
-	mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 1;
-	MEM_READ(Z502Context, &mmio);
-	printf("Returned Context Address: %d\n", mmio.Field1);
-*/
 	long ErrorReturned;
 	long SleepTime = 100;
 	INT32 Time1, Time2;

@@ -156,8 +156,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
 			MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
 			DoSleep(10);                       // Give it a little more time
-
 			break;
+		case SYSNUM_CREATE_PROCESS:
+
 		default:
 			printf("ERROR!  call_type not recognized!\n");
 			printf("Call_type is - %i\n", call_type);
@@ -177,11 +178,10 @@ void osInit(int argc, char *argv[]) {
 	MEMORY_MAPPED_IO mmio;
 
 	//init Queues
-	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));
-	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
-	initTimerQueue();
 	initPCBTable();
+	initTimerQueue();
+	initReadyQueue();
 
   // Demonstrates how calling arguments are passed thru to here       
 

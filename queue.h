@@ -2,6 +2,7 @@
 
 struct Process_Control_Block  {
 	long         ContextID;
+	char         ProcessName[64];
 	INT32        ProcessID;
 	long         ProcessState;
 	long         WakeUpTime;
@@ -31,16 +32,33 @@ struct Timer_Queue{
 	struct Timer_Queue_Element *First_Element;
 };
 
+struct Ready_Queue_Element{
+	struct Process_Control_Block *PCB;
+	struct Ready_Queue_Element *Prev_Element;
+	struct Ready_Queue_Element *Next_Element;
+};
+
+struct Ready_Queue{
+	int Element_Number;
+	struct Ready_Queue_Element *First_Element;
+};
+
 struct Timer_Queue *timerQueue;
-struct PCB_Table *pcbTable;
 struct Process_Control_Block *currentPCB;
+struct PCB_Table *pcbTable;
+struct Ready_Queue *readyQueue;
 
 //timer queue functions
 void initTimerQueue();
 void enTimerQueue(struct Process_Control_Block *PCB);
 void deTimerQueue();
 
-//page table functions
+//PCB table functions
 void initPCBTable();
 void enPCBTable(struct Process_Control_Block *PCB);
 struct Process_Control_Block *findPCB(long contextID);
+
+//ready queue function
+void initReadyQueue();
+void enReadyQueue(struct Process_Control_Block *PCB);
+void deReadyQueue();
