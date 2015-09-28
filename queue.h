@@ -4,9 +4,11 @@ struct Process_Control_Block  {
 	long         ContextID;
 	INT32        ProcessID;
 	long         ProcessState;
+	long         WakeUpTime;
+	int          Priority;
 };
 
-//structs for Queue Hub
+//structs for PCB Table
 struct PCB_Table_Element {
 	struct Process_Control_Block *PCB;
 	struct PCB_Table_Element *Next_Element;

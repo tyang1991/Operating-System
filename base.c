@@ -31,8 +31,6 @@
 #include             "queue.h"
 #include             "Control.h"
 
-void OSCreateProcess(long *Test_To_Run);
-
 //  Allows the OS and the hardware to agree on where faults occur
 extern void *TO_VECTOR[];
 
@@ -118,7 +116,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time;          //for SYSNUM_SLEEP
-	long ReturnedTime;        //for SYSNUM_SLEEP
 	long WakeUpTime;          //for SYSNUM_SLEEP
 	long returnedContextID;   //for SYSNUM_SLEEP
 	struct Process_Control_Block *returnedPCB;
@@ -150,8 +147,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
+			WakeUpTime = CurrentTime() + Sleep_Time;
+			currentPCB->WakeUpTime = WakeUpTime;
+			enTimerQueue(currentPCB, WakeUpTime);
+			ResetTimer();
 
-			StartTimer(Sleep_Time);
+			// Go idle until the interrupt occurs
+			mmio.Mode = Z502Action;
+			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
+			MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
+			DoSleep(10);                       // Give it a little more time
+
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -226,35 +232,5 @@ void osInit(int argc, char *argv[]) {
  	} // End of handler for sample code - This routine should never return here
 
 	OSCreateProcess(test1a);
+	OSStartProcess(pcbTable->First_Element->PCB);
 }                                               // End of osInit
-
-void OSCreateProcess(long *Test_To_Run){
-
-	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
-	MEMORY_MAPPED_IO mmio;
-
-	struct Process_Control_Block *newPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
-
-	//  By default test0 runs if no arguments are given on the command line
-	//  Creation and Switching of contexts should be done in a separate routine.
-	//  This should be done by a "OsMakeProcess" routine, so that
-	//  test0 runs on a process recognized by the operating system.
-
-	mmio.Mode = Z502InitializeContext;
-	mmio.Field1 = 0;
-	mmio.Field2 = (long)Test_To_Run;//test 1a
-	mmio.Field3 = (long)PageTable;
-
-	MEM_WRITE(Z502Context, &mmio);   // Start this new Context Sequence
-
-	newPCB->ContextID = mmio.Field1;
-	printf("1. new PCB contextID: %d\n", newPCB->ContextID); //for test
-	enPCBTable(newPCB);
-//	printf("2. new PCB contextID: %d\n", pcbTable->First_Element->PCB->ContextID); //for test
-	
-	mmio.Mode = Z502StartContext;
-	// Field1 contains the value of the context returned in the last call
-	// Suspends this current thread
-	mmio.Field2 = START_NEW_CONTEXT_AND_SUSPEND;
-	MEM_WRITE(Z502Context, &mmio);     // Start up the context
-}

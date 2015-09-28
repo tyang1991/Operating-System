@@ -8,29 +8,29 @@ void initTimerQueue(){
 }
 
 void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
-	struct Timer_Queue_Element newElement;
-	newElement.WakeUpTime = wakeUpTime;
-	newElement.PCB = PCB;
+	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
+	newElement->WakeUpTime = wakeUpTime;
+	newElement->PCB = PCB;
 	
 	if (timerQueue->Element_Number == 0){
 		//build timer queue element
-		newElement.Prev_Element = &newElement;
-		newElement.Next_Element = &newElement;
+		newElement->Prev_Element = newElement;
+		newElement->Next_Element = newElement;
 		//make change in timer queue
 		timerQueue->Element_Number = 1;
-		timerQueue->First_Element = &newElement;
+		timerQueue->First_Element = newElement;
 	}
 	else{
 		struct Timer_Queue_Element *checkingElement = timerQueue->First_Element;
 
 		for (int i = 0; i < timerQueue->Element_Number; i++){
-			if (newElement.WakeUpTime < checkingElement->WakeUpTime){
+			if (newElement->WakeUpTime < checkingElement->WakeUpTime){
 				//change list links
-				checkingElement->Prev_Element->Next_Element = &newElement;
-				checkingElement->Prev_Element = &newElement;
+				checkingElement->Prev_Element->Next_Element = newElement;
+				checkingElement->Prev_Element = newElement;
 				//change First_Element in timerQueue if newElement is first
 				if (i == 0){
-					timerQueue->First_Element = &newElement;
+					timerQueue->First_Element = newElement;
 				}
 				break;
 			}
@@ -39,8 +39,8 @@ void enTimerQueue(struct Process_Control_Block *PCB, long wakeUpTime){
 			}
 			//change Last_Element in timerQueue if newElement is last
 			if (i == timerQueue->Element_Number){
-				checkingElement->Next_Element->Prev_Element = &newElement;
-				checkingElement->Next_Element = &newElement;
+				checkingElement->Next_Element->Prev_Element = newElement;
+				checkingElement->Next_Element = newElement;
 			}
 		}
 		//free temp pointer
