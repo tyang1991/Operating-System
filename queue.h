@@ -1,8 +1,11 @@
 #include             "global.h"
 
+#define PCB_STATE_LIVE 0L
+#define PCB_STATE_DEAD 1L
+
 struct Process_Control_Block  {
 	long         ContextID;
-	char         ProcessName[64];
+	char*        ProcessName;
 	int          ProcessID;
 	long         ProcessState;
 	long         WakeUpTime;
@@ -56,7 +59,9 @@ void deTimerQueue();
 //PCB table functions
 void initPCBTable();
 void enPCBTable(struct Process_Control_Block *PCB);
-struct Process_Control_Block *findPCB(long contextID);
+struct Process_Control_Block *findPCBbyProcessID(long ProcessID);
+int findProcessNameInTable(char* ProcessName);
+struct Process_Control_Block *findPCBbyProcessName(char* ProcessName);
 
 //ready queue function
 void initReadyQueue();

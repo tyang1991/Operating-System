@@ -117,6 +117,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time;          //for SYSNUM_SLEEP
 	long returnedContextID;   //for SYSNUM_SLEEP
+	struct Process_Control_Block *termPCB;//for SYSNUM_TERMINATE_PROCESS
 	struct Process_Control_Block *returnedPCB;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
@@ -139,10 +140,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Temp_Clock = mmio.Field1;
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
-			// terminate system call
-		case SYSNUM_TERMINATE_PROCESS:
-			MEM_WRITE(Z502Halt, 0);
-			break;
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
@@ -161,6 +158,26 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
 							SystemCallData->Argument[2], SystemCallData->Argument[3], 
 							SystemCallData->Argument[4]);
+			break;
+		case SYSNUM_TERMINATE_PROCESS:
+			termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
+			//if PCB found, return SUCCESS; otherwise, return BAD
+			if (termPCB != NULL){
+				termPCB->ProcessState = PCB_STATE_DEAD;
+				*SystemCallData->Argument[1] = ERR_SUCCESS;
+			}
+			else{
+				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+			}
+			//if PCB running, call Dispatcher
+			if (currentPCB == termPCB){
+				Dispatcher();
+			}
+
+			break;
+		case SYSNUM_GET_PROCESS_ID:
+			break;
+
 
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -233,10 +250,11 @@ void osInit(int argc, char *argv[]) {
 
  	} // End of handler for sample code - This routine should never return here
 
-//	char sss[32] = {(long*) "test1a_a" };
-//	printf("1.%s\n", (long*) "test1a_a");
+//	long* sss = {(long*) "test1a_a" };
+//	printf("1.%s\n", (char*)sss);
 
 	long ErrorReturned;
-	OSCreateProcess((long*)"test1b", (long*)test1b, (long*)3, (long*)1, (long*)&ErrorReturned);
+	long newPID;
+	OSCreateProcess((long*)"test1bb", (long*)test1b, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	OSStartProcess(pcbTable->First_Element->PCB);
 }                                               // End of osInit

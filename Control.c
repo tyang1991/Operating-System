@@ -27,7 +27,19 @@ void ResetTimer(){
 void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input
 	if ((int)Priority < 0){
-		*ErrorReturned = 1L;
+		*ErrorReturned = ERR_BAD_PARAM;
+		return;
+	}
+	else if (findPCBbyProcessName((char*)ProcessName) != NULL){
+		*ErrorReturned = ERR_BAD_PARAM;
+		printf("1. Failed to create a process: %s\n", (char*)ProcessName);
+		struct Process_Control_Block *tmpPCB = findPCBbyProcessName((char*)ProcessName);
+		printf("2. PID: %d\n", tmpPCB->ProcessID);
+		printf("3. PName: %s\n", tmpPCB->ProcessName);
+		return;
+	}
+	else{
+		*ErrorReturned = ERR_SUCCESS;
 	}
 
 	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
@@ -43,7 +55,15 @@ void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long 
 
 	newPCB->ContextID = mmio.Field1;
 	newPCB->Priority = (int)Priority;
-	newPCB->ProcessID = (long)ProcessID;
+	newPCB->ProcessID = pcbTable->Element_Number + 1;
+	char* newProcessName = (char*)calloc(sizeof(char),16);
+	strcpy(newProcessName, (char*)ProcessName);//
+	newPCB->ProcessName = newProcessName;
+	newPCB->ProcessState = PCB_STATE_LIVE;
+	*ProcessID = newPCB->ProcessID;
+
+	printf("4. Successfully create a process: %s\n", (char*)ProcessName);
+	printf("5. Successfully create a PID: %d\n", newPCB->ProcessID);
 
 	//put new PCB into PCB Table and Ready Queue
 	enPCBTable(newPCB);
@@ -59,6 +79,11 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 	mmio.Field1 = PCB->ContextID;
 	mmio.Field2 = START_NEW_CONTEXT_AND_SUSPEND;
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+}
+
+void Dispatcher(){
+	OSStartProcess(readyQueue->First_Element->PCB);
+	deReadyQueue();
 }
 
 /*

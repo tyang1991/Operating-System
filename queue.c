@@ -1,5 +1,6 @@
 #include "queue.h"
 #include "stdio.h"
+#include "string.h"
 
 //PCB Table
 void initPCBTable(){
@@ -19,15 +20,57 @@ void enPCBTable(struct Process_Control_Block *PCB){
 		newElement->Next_Element = pcbTable->First_Element;
 		pcbTable->First_Element = newElement;
 	}
-	pcbTable->Element_Number = +1;
+	pcbTable->Element_Number += 1;
 }
 
-struct Process_Control_Block *findPCB(long contextID){
+int findProcessNameInTable(char* ProcessName){
+	if (pcbTable->Element_Number == 0){
+		return 0;// if no PCB, return 0
+	}
+	else{
+		struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
+		for (int i = 0; i < pcbTable; i++){
+			if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
+				return 1;//if find a same ProcessName, return 1
+			}
+		}
+	}
+	return 0;//if ProcessName not found, return 0
+}
+
+struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 	//if PCB table is empty, return null PCB
 	if (pcbTable->Element_Number == 0){
-		struct Process_Control_Block nullPCB;
-		printf("empty pcbTable, nullPCB returned\n");
-		return &nullPCB;
+//		printf("empty pcbTable, NULL returned\n");
+		return NULL;
+	}
+
+	//create a temp pointer to check elements
+	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
+
+	//check Element_Number-1 times because last element doesn't have a pointer to next
+	for (int i = 0; i < pcbTable->Element_Number; i++){
+		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
+			return checkingElement->PCB;
+		}
+		else{
+			//if not found, return null PCB
+			if (i == pcbTable->Element_Number - 1){
+//				printf("PCB not found, NULL returned\n");
+				return NULL;
+			}
+			else{
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+	}
+}
+
+struct Process_Control_Block *findPCBbyProcessID(long ProcessID){
+	//if PCB table is empty, return null PCB
+	if (pcbTable->Element_Number == 0){
+//		printf("empty pcbTable, NULL returned\n");
+		return NULL;
 	}
 
 	//create a temp pointer to check elements
@@ -35,15 +78,14 @@ struct Process_Control_Block *findPCB(long contextID){
 	
 	//check Element_Number-1 times because last element doesn't have a pointer to next
 	for (int i = 0; i < pcbTable->Element_Number; i++){
-		if (checkingElement->PCB->ContextID == contextID){
+		if (checkingElement->PCB->ProcessID == ProcessID){
 			return checkingElement->PCB;
 		}
 		else{
 			//if not found, return null PCB
 			if (i == pcbTable->Element_Number - 1){
-				struct Process_Control_Block nullPCB;
-				printf("PCB not found, nullPCB returned\n");
-				return &nullPCB;
+//				printf("PCB not found, NULL returned\n");
+				return NULL;
 			}
 			else{
 				checkingElement = checkingElement->Next_Element;

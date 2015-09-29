@@ -169,7 +169,7 @@ void test1b(void) {
 	TERMINATE_PROCESS(ProcessID2, &ErrorReturned);
 	SuccessExpected(ErrorReturned, "TERMINATE_PROCESS");
 
-	// Loop until an error is found on the CREATE_PROCESS stystem call.
+	// Loop until an error is found on the CREATE_PROCESS system call.
 	// Since the call itself is legal, we must get an error
 	// because we exceed some limit.
 	ErrorReturned = ERR_SUCCESS;
