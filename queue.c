@@ -94,6 +94,15 @@ struct Process_Control_Block *findPCBbyProcessID(long ProcessID){
 	}
 }
 
+char * findPCBIDbyName(char* ProcessName){
+	if (findPCBbyProcessName(ProcessName) != NULL){
+		return findPCBbyProcessName(ProcessName)->ProcessID;
+	}
+	else{
+		return NULL;
+	}
+}
+
 //Timer Queue
 void initTimerQueue(){
 	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));

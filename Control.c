@@ -24,6 +24,8 @@ void ResetTimer(){
 	}
 }
 
+#define MAX_PCB_NUMBER 10
+
 void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input
 	if ((int)Priority < 0){
@@ -32,10 +34,10 @@ void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long 
 	}
 	else if (findPCBbyProcessName((char*)ProcessName) != NULL){
 		*ErrorReturned = ERR_BAD_PARAM;
-		printf("1. Failed to create a process: %s\n", (char*)ProcessName);
-		struct Process_Control_Block *tmpPCB = findPCBbyProcessName((char*)ProcessName);
-		printf("2. PID: %d\n", tmpPCB->ProcessID);
-		printf("3. PName: %s\n", tmpPCB->ProcessName);
+		return;
+	}
+	else if (pcbTable->Element_Number >= MAX_PCB_NUMBER){
+		*ErrorReturned = ERR_BAD_PARAM;
 		return;
 	}
 	else{
@@ -61,9 +63,6 @@ void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long 
 	newPCB->ProcessName = newProcessName;
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	*ProcessID = newPCB->ProcessID;
-
-	printf("4. Successfully create a process: %s\n", (char*)ProcessName);
-	printf("5. Successfully create a PID: %d\n", newPCB->ProcessID);
 
 	//put new PCB into PCB Table and Ready Queue
 	enPCBTable(newPCB);

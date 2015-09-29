@@ -117,7 +117,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time;          //for SYSNUM_SLEEP
 	long returnedContextID;   //for SYSNUM_SLEEP
+	long tempPID;//for SYSNUM_TERMINATE_PROCESS
 	struct Process_Control_Block *termPCB;//for SYSNUM_TERMINATE_PROCESS
+	char* ReturnedPID;//for SYSNUM_GET_PROCESS_ID;
 	struct Process_Control_Block *returnedPCB;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
@@ -160,25 +162,39 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 							SystemCallData->Argument[4]);
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
-			termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
-			//if PCB found, return SUCCESS; otherwise, return BAD
-			if (termPCB != NULL){
-				termPCB->ProcessState = PCB_STATE_DEAD;
-				*SystemCallData->Argument[1] = ERR_SUCCESS;
+			tempPID = (long)SystemCallData->Argument[0];
+			if (tempPID == -2){
+				mmio.Mode = Z502Action;
+				mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+				MEM_WRITE(Z502Halt,&mmio);
 			}
 			else{
-				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
+				//if PCB found, return SUCCESS; otherwise, return BAD
+				if (termPCB != NULL){
+					termPCB->ProcessState = PCB_STATE_DEAD;
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+				}
+				else{
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
+				//if PCB running, call Dispatcher
+				if (currentPCB == termPCB){
+					Dispatcher();
+				}
 			}
-			//if PCB running, call Dispatcher
-			if (currentPCB == termPCB){
-				Dispatcher();
-			}
-
 			break;
 		case SYSNUM_GET_PROCESS_ID:
+			ReturnedPID = findPCBIDbyName(SystemCallData->Argument[0]);
+			if (ReturnedPID != NULL){
+				*SystemCallData->Argument[1] = ReturnedPID;
+				*SystemCallData->Argument[2] = ERR_SUCCESS;
+			}
+			else{
+				SystemCallData->Argument[1] = NULL;
+				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+			}
 			break;
-
-
 		default:
 			printf("ERROR!  call_type not recognized!\n");
 			printf("Call_type is - %i\n", call_type);
@@ -256,5 +272,5 @@ void osInit(int argc, char *argv[]) {
 	long ErrorReturned;
 	long newPID;
 	OSCreateProcess((long*)"test1bb", (long*)test1b, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
-	OSStartProcess(pcbTable->First_Element->PCB);
+	Dispatcher();
 }                                               // End of osInit
