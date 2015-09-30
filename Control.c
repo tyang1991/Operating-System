@@ -81,8 +81,29 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
-	OSStartProcess(readyQueue->First_Element->PCB);
-	deReadyQueue();
+	if (readyQueue->Element_Number != 0){
+		deReadyQueue();
+	}
+	else{
+		MEMORY_MAPPED_IO mmio;    //for hardware interface
+		// Go idle until the interrupt occurs
+		mmio.Mode = Z502Action;
+		mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
+		MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
+		DoSleep(10);                       // Give it a little more time
+	}
+}
+
+void SuspendProcess(){
+	MEMORY_MAPPED_IO mmio;
+
+	mmio.Mode = Z502StartContext;
+	mmio.Field2 = SUSPEND_CURRENT_CONTEXT_ONLY;
+	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+}
+
+void IdleProcess(){
+
 }
 
 /*

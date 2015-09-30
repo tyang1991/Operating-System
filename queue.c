@@ -1,6 +1,7 @@
 #include "queue.h"
 #include "stdio.h"
 #include "string.h"
+#include "Control.h"
 
 //PCB Table
 void initPCBTable(){
@@ -157,12 +158,17 @@ void deTimerQueue(){
 	if (timerQueue->Element_Number == 0){
 		printf("There is no element in timer queue\n");
 	}
-	else if (timerQueue->Element_Number == 1){
-		timerQueue->First_Element = NULL;
-		timerQueue->Element_Number -= 1;
-	}
 	else{
-		timerQueue->First_Element = timerQueue->First_Element->Next_Element;
+		enReadyQueue(timerQueue->First_Element->PCB);//transfer PCB into ready Queue
+		if (timerQueue->Element_Number == 1){
+			timerQueue->First_Element = NULL;
+		}
+		else{
+			//we don't care about the discarded element
+			timerQueue->First_Element->Prev_Element->Next_Element = timerQueue->First_Element->Next_Element;
+			timerQueue->First_Element->Next_Element->Prev_Element = timerQueue->First_Element->Prev_Element;
+			timerQueue->First_Element = timerQueue->First_Element->Next_Element;
+		}
 		timerQueue->Element_Number -= 1;
 	}
 }
@@ -221,12 +227,18 @@ void deReadyQueue(){
 	if (readyQueue->Element_Number == 0){
 		printf("There is no element in ready queue\n");
 	}
-	else if (readyQueue->Element_Number == 1){
-		readyQueue->First_Element = NULL;
-		readyQueue->Element_Number -= 1;
-	}
 	else{
-		readyQueue->First_Element = readyQueue->First_Element->Next_Element;
+		struct Process_Control_Block *PCB = readyQueue->First_Element->PCB;
+		if (readyQueue->Element_Number == 1){
+			readyQueue->First_Element = NULL;
+		}
+		else{
+			//we don't care about the discarded element
+			readyQueue->First_Element->Prev_Element->Next_Element = readyQueue->First_Element->Next_Element;
+			readyQueue->First_Element->Next_Element->Prev_Element = readyQueue->First_Element->Prev_Element;
+			readyQueue->First_Element = readyQueue->First_Element->Next_Element;
+		}
 		readyQueue->Element_Number -= 1;
+		OSStartProcess(PCB);
 	}
 }
