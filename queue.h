@@ -62,7 +62,7 @@ void enPCBTable(struct Process_Control_Block *PCB);
 struct Process_Control_Block *findPCBbyProcessID(long ProcessID);
 int findProcessNameInTable(char* ProcessName);
 struct Process_Control_Block *findPCBbyProcessName(char* ProcessName);
-char * findPCBIDbyName(char* ProcessName);
+int findPCBIDbyName(char* ProcessName);
 
 //ready queue function
 void initReadyQueue();

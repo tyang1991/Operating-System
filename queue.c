@@ -94,7 +94,7 @@ struct Process_Control_Block *findPCBbyProcessID(long ProcessID){
 	}
 }
 
-char * findPCBIDbyName(char* ProcessName){
+int findPCBIDbyName(char* ProcessName){
 	if (findPCBbyProcessName(ProcessName) != NULL){
 		return findPCBbyProcessName(ProcessName)->ProcessID;
 	}

@@ -119,7 +119,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	long returnedContextID;   //for SYSNUM_SLEEP
 	long tempPID;//for SYSNUM_TERMINATE_PROCESS
 	struct Process_Control_Block *termPCB;//for SYSNUM_TERMINATE_PROCESS
-	char* ReturnedPID;//for SYSNUM_GET_PROCESS_ID;
+	int ReturnedPID;//for SYSNUM_GET_PROCESS_ID
+	char* ProcessName;//for SYSNUM_GET_PROCESS_ID
 	struct Process_Control_Block *returnedPCB;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
@@ -185,14 +186,21 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			}
 			break;
 		case SYSNUM_GET_PROCESS_ID:
-			ReturnedPID = findPCBIDbyName(SystemCallData->Argument[0]);
-			if (ReturnedPID != NULL){
-				*SystemCallData->Argument[1] = ReturnedPID;
+			ProcessName = (char*)SystemCallData->Argument[0];
+			if (strcmp(ProcessName,"") == 0){
+				*SystemCallData->Argument[1] = currentPCB->ProcessID;
 				*SystemCallData->Argument[2] = ERR_SUCCESS;
 			}
 			else{
-				SystemCallData->Argument[1] = NULL;
-				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+				ReturnedPID = findPCBIDbyName(SystemCallData->Argument[0]);
+				if (ReturnedPID != NULL){
+					*SystemCallData->Argument[1] = ReturnedPID;
+					*SystemCallData->Argument[2] = ERR_SUCCESS;
+				}
+				else{
+					SystemCallData->Argument[1] = NULL;
+					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+				}
 			}
 			break;
 		default:
