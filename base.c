@@ -169,10 +169,11 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			tempPID = (long)SystemCallData->Argument[0];
+			if (tempPID == -1){
+				TerminateCurrentProcess();
+			}
 			if (tempPID == -2){
-				mmio.Mode = Z502Action;
-				mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
-				MEM_WRITE(Z502Halt,&mmio);
+				HaltProcess();
 			}
 			else{
 				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
@@ -285,6 +286,5 @@ void osInit(int argc, char *argv[]) {
 	long ErrorReturned;
 	long newPID;
 	OSCreateProcess((long*)"test1bb", (long*)test1b, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
-	printf("test1a created\n");
 	Dispatcher();
 }                                               // End of osInit

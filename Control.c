@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "syscalls.h"
 #include "queue.h"
+#include "Control.h"
 
 long CurrentTime(){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
@@ -85,12 +86,7 @@ void Dispatcher(){
 		deReadyQueue();
 	}
 	else{
-		MEMORY_MAPPED_IO mmio;    //for hardware interface
-		// Go idle until the interrupt occurs
-		mmio.Mode = Z502Action;
-		mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-		MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
-		DoSleep(10);                       // Give it a little more time
+		IdleProcess();
 	}
 }
 
@@ -103,35 +99,27 @@ void SuspendProcess(){
 }
 
 void IdleProcess(){
-
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	// Go idle until the interrupt occurs
+	mmio.Mode = Z502Action;
+	mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
+	MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
+	DoSleep(10);                       // Give it a little more time
 }
 
-/*
-void StartTimer(SleepTime){
-MEMORY_MAPPED_IO mmio;    //for hardware interface
-struct Process_Control_Block * currentPCB = pcbTable->First_Element->PCB;//get current PCB
-
-//get current time
-long currentTime;
-mmio.Mode = Z502ReturnValue;
-mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-MEM_READ(Z502Clock, &mmio);
-currentTime = mmio.Field1;
-
-//put current PCB into timer Queue
-long wakeUpTime = SleepTime + currentTime;
-enTimerQueue(currentPCB, wakeUpTime);
-
-// Start the timer - here's the sequence to use
-mmio.Mode = Z502Start;
-mmio.Field1 = SleepTime;   // You pick the time units
-mmio.Field2 = mmio.Field3 = 0;
-MEM_WRITE(Z502Timer, &mmio);
-
-// Go idle until the interrupt occurs
-mmio.Mode = Z502Action;
-mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
-DoSleep(10);                       // Give it a little more time
+void HaltProcess(){
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	mmio.Mode = Z502Action;
+	mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+	MEM_WRITE(Z502Halt, &mmio);
 }
-*/
+
+void TerminateCurrentProcess(){
+	currentPCB->ProcessState = PCB_STATE_DEAD;
+	if (pcbTable->Element_Number == 1){
+		HaltProcess();
+	}
+	else{
+		Dispatcher();
+	}
+}
