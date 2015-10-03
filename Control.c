@@ -20,6 +20,7 @@ void ResetTimer(){
 		// Start the timer - here's the sequence to use
 		mmio.Mode = Z502Start;
 		mmio.Field1 = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();   // You pick the time units
+		printf("Timer reset to: %d\n", mmio.Field1);//for test
 		mmio.Field2 = mmio.Field3 = 0;
 		MEM_WRITE(Z502Timer, &mmio);
 	}
@@ -65,6 +66,8 @@ void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long 
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	*ProcessID = newPCB->ProcessID;
 
+	printf("New ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);
+
 	//put new PCB into PCB Table and Ready Queue
 	enPCBTable(newPCB);
 	enReadyQueue(newPCB);
@@ -82,10 +85,14 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
+//	PrintPIDinReadyQueue();
+//	PrintPIDinTimerQueue();
+//	if (readyQueue->Element_Number != 0 || currentPCB == NULL){
 	if (readyQueue->Element_Number != 0){
-		deReadyQueue();
+			deReadyQueue();
 	}
 	else{
+//		CALL(Dispatcher());
 		IdleProcess();
 	}
 }
@@ -121,5 +128,65 @@ void TerminateCurrentProcess(){
 	}
 	else{
 		Dispatcher();
+	}
+}
+
+void PrintPIDinReadyQueue(){
+	if (readyQueue->Element_Number == 0){
+		return;
+	}
+	else{
+		struct Ready_Queue_Element* checkingElement = readyQueue->First_Element;
+		printf("ReadyQueue PID list: ");
+		for (int i = 0; i < readyQueue->Element_Number; i++){
+			printf("%d ", checkingElement->PCB->ProcessID);
+			if (i != readyQueue->Element_Number - 1){
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+		printf("\n");
+	}
+}
+
+void PrintPIDinTimerQueue() {
+	if (timerQueue->Element_Number == 0) {
+		return;
+	}
+	else {
+		struct Timer_Queue_Element* checkingElement = timerQueue->First_Element;
+		printf("TimerQueue PID list: ");
+		for (int i = 0; i < timerQueue->Element_Number; i++) {
+			printf("%d ", checkingElement->PCB->ProcessID);
+			if (i != timerQueue->Element_Number - 1) {
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+		printf("\n");
+	}
+}
+
+void PrintCurrentPID(){
+	if (currentPCB == NULL){
+		printf("No currentPCB\n");
+	}
+	else{
+		printf("Current PID: %d\n", currentPCB->ProcessID);
+	}
+}
+
+void PrintPIDinPCBTable() {
+	if (pcbTable->Element_Number == 0) {
+		return;
+	}
+	else {
+		struct PCB_Table_Element* checkingElement = pcbTable->First_Element;
+		printf("PCBTable PID list: ");
+		for (int i = 0; i < pcbTable->Element_Number; i++) {
+			printf("%d ", checkingElement->PCB->ProcessID);
+			if (i != pcbTable->Element_Number - 1) {
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+		printf("\n");
 	}
 }

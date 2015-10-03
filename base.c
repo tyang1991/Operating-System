@@ -60,9 +60,10 @@ void InterruptHandler(void) {
 	DeviceID = mmio.Field1;
 	//Status = mmio.Field2;
 
-	printf("here is in the interrupt handler\n");
+	printf("!!!here is in the interrupt handler\n");
 	deTimerQueue();
-	printf("Element in timer Q: %d\n", timerQueue->Element_Number);
+	PrintPIDinTimerQueue();
+	PrintPIDinReadyQueue();
 	Dispatcher();
 	
 	// Clear out this device - we're done with it
@@ -145,22 +146,19 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
 		case SYSNUM_SLEEP:
+			PrintCurrentPID();//for test
+			PrintPIDinReadyQueue();//for test
+			PrintPIDinTimerQueue();//for test
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
-			printf("In sleep!");
+			printf("In Sleep. PID: %d; CurrentTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), currentPCB->WakeUpTime);
 			enTimerQueue(currentPCB);
-			printf("new PID: %d\n", currentPCB->ProcessID);
-			ResetTimer();
-			printf("timer reset!");
+			PrintCurrentPID();//for test
+			PrintPIDinReadyQueue();//for test
+			PrintPIDinTimerQueue();//for test
+			printf("\n");
 			Dispatcher();
-/*
-			// Go idle until the interrupt occurs
-			mmio.Mode = Z502Action;
-			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-			MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
-			DoSleep(10);                       // Give it a little more time
-*/
 			break;
 		case SYSNUM_CREATE_PROCESS:
 			OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
@@ -285,6 +283,6 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	OSCreateProcess((long*)"test1bb", (long*)test1b, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	OSCreateProcess((long*)"test1cc", (long*)test1c, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	Dispatcher();
 }                                               // End of osInit

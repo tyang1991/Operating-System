@@ -135,6 +135,7 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 				//change First_Element in timerQueue if newElement is first
 				if (i == 0){
 					timerQueue->First_Element = newElement;
+					ResetTimer();
 				}
 				break;
 			}
@@ -143,15 +144,16 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 			}
 			//change Last_Element in timerQueue if newElement is last
 			if (i == timerQueue->Element_Number - 1){
-				newElement->Prev_Element = checkingElement;
-				newElement->Next_Element = checkingElement->Next_Element;
-				checkingElement->Next_Element->Prev_Element = newElement;
-				checkingElement->Next_Element = newElement;
+				newElement->Prev_Element = checkingElement->Prev_Element;
+				newElement->Next_Element = checkingElement;
+				checkingElement->Prev_Element->Next_Element = newElement;
+				checkingElement->Prev_Element = newElement;
 			}
 		}
 		//make change to Element_Number in timerQueue
 		timerQueue->Element_Number += 1;
 	}
+//	currentPCB = NULL;
 }
 
 void deTimerQueue(){
@@ -159,7 +161,7 @@ void deTimerQueue(){
 		printf("There is no element in timer queue\n");
 	}
 	else{
-		enReadyQueue(timerQueue->First_Element->PCB);//transfer PCB into ready Queue
+		struct Process_Control_Block *PCB = timerQueue->First_Element->PCB;
 		if (timerQueue->Element_Number == 1){
 			timerQueue->First_Element = NULL;
 		}
@@ -170,6 +172,7 @@ void deTimerQueue(){
 			timerQueue->First_Element = timerQueue->First_Element->Next_Element;
 		}
 		timerQueue->Element_Number -= 1;
+		enReadyQueue(PCB);//transfer PCB into ready Queue
 	}
 }
 
@@ -193,7 +196,6 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 	}
 	else{
 		struct Ready_Queue_Element *checkingElement = readyQueue->First_Element;
-
 		for (int i = 0; i < readyQueue->Element_Number; i++){
 			if (newElement->PCB->Priority < checkingElement->PCB->Priority){
 				//change list links
@@ -210,17 +212,19 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 			else{
 				checkingElement = checkingElement->Next_Element;
 			}
-			//change Last_Element in timerQueue if newElement is last
+			//when checked a loop, place it at end
 			if (i == readyQueue->Element_Number - 1){
-				newElement->Prev_Element = checkingElement;
-				newElement->Next_Element = checkingElement->Next_Element;
-				checkingElement->Next_Element->Prev_Element = newElement;
-				checkingElement->Next_Element = newElement;
+				newElement->Prev_Element = checkingElement->Prev_Element;
+				newElement->Next_Element = checkingElement;
+				checkingElement->Prev_Element->Next_Element = newElement;
+				checkingElement->Prev_Element = newElement;
 			}
 		}
 		//make change to Element_Number in timerQueue
 		readyQueue->Element_Number += 1;
 	}
+	PrintPIDinTimerQueue();
+	PrintPIDinReadyQueue();
 }
 
 void deReadyQueue(){
@@ -233,10 +237,12 @@ void deReadyQueue(){
 			readyQueue->First_Element = NULL;
 		}
 		else{
-			//we don't care about the discarded element
 			readyQueue->First_Element->Prev_Element->Next_Element = readyQueue->First_Element->Next_Element;
 			readyQueue->First_Element->Next_Element->Prev_Element = readyQueue->First_Element->Prev_Element;
 			readyQueue->First_Element = readyQueue->First_Element->Next_Element;
+
+//			readyQueue->First_Element->Next_Element = NULL;
+//			readyQueue->First_Element->Prev_Element = NULL;
 		}
 		readyQueue->Element_Number -= 1;
 		OSStartProcess(PCB);

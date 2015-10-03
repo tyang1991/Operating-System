@@ -241,7 +241,8 @@ void test1c(void) {
 	CREATE_PROCESS("test1c_d", test1x, PRIORITY1C, &ProcessID4, &ErrorReturned);
 
 	CREATE_PROCESS("test1c_e", test1x, PRIORITY1C, &ProcessID5, &ErrorReturned);
-
+	PrintPIDinReadyQueue();
+	PrintPIDinPCBTable();
 	// Now we sleep, see if one of the five processes has terminated, and
 	// continue the cycle until one of them is gone.  This allows the test1x
 	// processes to exhibit scheduling.
@@ -971,6 +972,7 @@ void test1x(void) {
 		printf("Test1X: Pid = %d, Sleep Time = %ld, Latency Time = %d\n",
 				(int) OurProcessID, RandomSleep,
 				(int) (EndingTime - RandomSeed));
+		PrintPIDinTimerQueue();//for test
 	}
 	printf("Test1x, PID %ld, Ends at Time %ld\n", OurProcessID, EndingTime);
 

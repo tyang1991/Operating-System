@@ -7,3 +7,7 @@ void SuspendProcess();
 void IdleProcess();
 void HaltProcess();
 void TerminateCurrentProcess();
+void PrintPIDinReadyQueue();
+void PrintPIDinTimerQueue();
+void PrintCurrentPID();
+void PrintPIDinPCBTable();
