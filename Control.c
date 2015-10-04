@@ -16,10 +16,17 @@ long CurrentTime(){
 void ResetTimer(){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
+	long timerReset = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();
+
 	if (timerQueue->Element_Number != 0){
 		// Start the timer - here's the sequence to use
 		mmio.Mode = Z502Start;
-		mmio.Field1 = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();   // You pick the time units
+		if (timerReset > 0){
+			mmio.Field1 = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();   // You pick the time units
+		}
+		else{
+			mmio.Field1 = 0;   // You pick the time units
+		}
 		printf("Timer reset to: %d\n", mmio.Field1);//for test
 		mmio.Field2 = mmio.Field3 = 0;
 		MEM_WRITE(Z502Timer, &mmio);
@@ -85,15 +92,16 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
-//	PrintPIDinReadyQueue();
-//	PrintPIDinTimerQueue();
-//	if (readyQueue->Element_Number != 0 || currentPCB == NULL){
-	if (readyQueue->Element_Number != 0){
-			deReadyQueue();
+	if (readyQueue->Element_Number != 0 && ( ifPCBinTimerQueue(currentPCB) || currentPCB == NULL ) ){
+		printf("In Dispatcher if\n");
+		deReadyQueue();
 	}
 	else{
-//		CALL(Dispatcher());
-		IdleProcess();
+		printf("CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
+		while (readyQueue->Element_Number == 0){
+			CALL(1);
+//			printf("Current Time: %d\n    Recent Wake Up Time: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
+		}
 	}
 }
 

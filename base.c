@@ -61,9 +61,8 @@ void InterruptHandler(void) {
 	//Status = mmio.Field2;
 
 	printf("!!!here is in the interrupt handler\n");
+	printf("  CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
 	deTimerQueue();
-	PrintPIDinTimerQueue();
-	PrintPIDinReadyQueue();
 	Dispatcher();
 	
 	// Clear out this device - we're done with it
@@ -146,6 +145,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
 		case SYSNUM_SLEEP:
+			printf("%%%%%%%%%%%%%%%% In Sleep\n");
 			PrintCurrentPID();//for test
 			PrintPIDinReadyQueue();//for test
 			PrintPIDinTimerQueue();//for test
@@ -154,9 +154,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
 			printf("In Sleep. PID: %d; CurrentTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), currentPCB->WakeUpTime);
 			enTimerQueue(currentPCB);
-			PrintCurrentPID();//for test
-			PrintPIDinReadyQueue();//for test
-			PrintPIDinTimerQueue();//for test
 			printf("\n");
 			Dispatcher();
 			break;
@@ -226,7 +223,7 @@ void osInit(int argc, char *argv[]) {
 	MEMORY_MAPPED_IO mmio;
 
 	//init Queues
-	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
+	struct Process_Control_Block* currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	initPCBTable();
 	initTimerQueue();
 	initReadyQueue();

@@ -972,7 +972,6 @@ void test1x(void) {
 		printf("Test1X: Pid = %d, Sleep Time = %ld, Latency Time = %d\n",
 				(int) OurProcessID, RandomSleep,
 				(int) (EndingTime - RandomSeed));
-		PrintPIDinTimerQueue();//for test
 	}
 	printf("Test1x, PID %ld, Ends at Time %ld\n", OurProcessID, EndingTime);
 

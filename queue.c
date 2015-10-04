@@ -153,7 +153,11 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 		//make change to Element_Number in timerQueue
 		timerQueue->Element_Number += 1;
 	}
-//	currentPCB = NULL;
+	printf("############### In en Timer Queue\n");
+	PrintCurrentPID();
+	PrintPIDinReadyQueue();
+	PrintPIDinTimerQueue();
+	printf("  CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
 }
 
 void deTimerQueue(){
@@ -172,7 +176,32 @@ void deTimerQueue(){
 			timerQueue->First_Element = timerQueue->First_Element->Next_Element;
 		}
 		timerQueue->Element_Number -= 1;
+
+		printf("@@@@@@@@@@@@@@@@@@@@@ In de Ready Queue\n");
+		PrintCurrentPID();
+		PrintPIDinReadyQueue();
+		PrintPIDinTimerQueue();
+
 		enReadyQueue(PCB);//transfer PCB into ready Queue
+		ResetTimer();
+	}
+}
+
+int ifPCBinTimerQueue(struct Process_Control_Block *PCB){
+	if (timerQueue->Element_Number == 0 || PCB==NULL){
+		return 0;
+	}
+	else{
+		struct Timer_Queue_Element *checkingElement = timerQueue->First_Element;
+		for (int i = 0; i < timerQueue->Element_Number; i++){
+			if (checkingElement->PCB->ProcessID == PCB->ProcessID){
+				return 1;
+			}
+			else{
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+		return 0;
 	}
 }
 
@@ -223,8 +252,10 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		//make change to Element_Number in timerQueue
 		readyQueue->Element_Number += 1;
 	}
-	PrintPIDinTimerQueue();
+	printf("$$$$$$$$$$$$$$$$$ In en Ready Queue\n");
+	PrintCurrentPID();
 	PrintPIDinReadyQueue();
+	PrintPIDinTimerQueue();
 }
 
 void deReadyQueue(){
@@ -240,11 +271,14 @@ void deReadyQueue(){
 			readyQueue->First_Element->Prev_Element->Next_Element = readyQueue->First_Element->Next_Element;
 			readyQueue->First_Element->Next_Element->Prev_Element = readyQueue->First_Element->Prev_Element;
 			readyQueue->First_Element = readyQueue->First_Element->Next_Element;
-
-//			readyQueue->First_Element->Next_Element = NULL;
-//			readyQueue->First_Element->Prev_Element = NULL;
 		}
 		readyQueue->Element_Number -= 1;
+
+		printf("&&&&&&&&&&&&&&&&&&&&& In de Ready Queue\n");
+		PrintCurrentPID();
+		PrintPIDinReadyQueue();
+		PrintPIDinTimerQueue();
+
 		OSStartProcess(PCB);
 	}
 }
