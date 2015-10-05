@@ -2,6 +2,14 @@
 #include "stdio.h"
 #include "string.h"
 #include "Control.h"
+#include "syscalls.h"
+
+#define                  DO_LOCK                     1
+#define                  DO_UNLOCK                   0
+#define                  SUSPEND_UNTIL_LOCKED        TRUE
+#define                  DO_NOT_SUSPEND              FALSE
+char mySuccess[] = "      Action Failed\0        Action Succeeded";
+#define          mySPART          22
 
 //PCB Table
 void initPCBTable(){
@@ -10,6 +18,12 @@ void initPCBTable(){
 }
 
 void enPCBTable(struct Process_Control_Block *PCB){
+	//Lock
+	INT32 LockResult;
+	READ_MODIFY(pcbTable, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+
 	struct PCB_Table_Element *newElement = (struct PCB_Table_Element*)malloc(sizeof(struct PCB_Table_Element));
 	newElement->PCB = PCB;
 
@@ -22,6 +36,12 @@ void enPCBTable(struct Process_Control_Block *PCB){
 		pcbTable->First_Element = newElement;
 	}
 	pcbTable->Element_Number += 1;
+
+	//Unlock
+	READ_MODIFY(pcbTable, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+
 }
 
 int findProcessNameInTable(char* ProcessName){
@@ -153,11 +173,16 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 		//make change to Element_Number in timerQueue
 		timerQueue->Element_Number += 1;
 	}
+}
+
+void enTimerQueueandDispatch(struct Process_Control_Block *PCB){
+	enTimerQueue(PCB);
+
 	printf("############### In en Timer Queue\n");
-	PrintCurrentPID();
-	PrintPIDinReadyQueue();
-	PrintPIDinTimerQueue();
+	PrintCurrentState();//for test
 	printf("  CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
+
+	Dispatcher();
 }
 
 void deTimerQueue(){
@@ -177,14 +202,18 @@ void deTimerQueue(){
 		}
 		timerQueue->Element_Number -= 1;
 
-		printf("@@@@@@@@@@@@@@@@@@@@@ In de Ready Queue\n");
-		PrintCurrentPID();
-		PrintPIDinReadyQueue();
-		PrintPIDinTimerQueue();
-
 		enReadyQueue(PCB);//transfer PCB into ready Queue
 		ResetTimer();
 	}
+}
+
+void deTimerQueueandDispatch(){
+	deTimerQueue();
+
+	printf("@@@@@@@@@@@@@@@@@@@@@ In de Ready Queue\n");
+	PrintCurrentState();//for test
+
+	Dispatcher();
 }
 
 int ifPCBinTimerQueue(struct Process_Control_Block *PCB){
@@ -253,9 +282,7 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		readyQueue->Element_Number += 1;
 	}
 	printf("$$$$$$$$$$$$$$$$$ In en Ready Queue\n");
-	PrintCurrentPID();
-	PrintPIDinReadyQueue();
-	PrintPIDinTimerQueue();
+	PrintCurrentState();//for test
 }
 
 void deReadyQueue(){
@@ -275,9 +302,9 @@ void deReadyQueue(){
 		readyQueue->Element_Number -= 1;
 
 		printf("&&&&&&&&&&&&&&&&&&&&& In de Ready Queue\n");
-		PrintCurrentPID();
-		PrintPIDinReadyQueue();
-		PrintPIDinTimerQueue();
+		PrintCurrentState();//for test
+
+		printf("\n");
 
 		OSStartProcess(PCB);
 	}

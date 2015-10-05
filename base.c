@@ -60,10 +60,13 @@ void InterruptHandler(void) {
 	DeviceID = mmio.Field1;
 	//Status = mmio.Field2;
 
+/////////////////////////Code go here////////////////////////////////////
 	printf("!!!here is in the interrupt handler\n");
 	printf("  CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
-	deTimerQueue();
-	Dispatcher();
+
+	deTimerQueueandDispatch();
+
+/////////////////////////Code end here///////////////////////////////////
 	
 	// Clear out this device - we're done with it
 	mmio.Mode = Z502ClearInterruptStatus;
@@ -145,17 +148,14 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
 		case SYSNUM_SLEEP:
-			printf("%%%%%%%%%%%%%%%% In Sleep\n");
-			PrintCurrentPID();//for test
-			PrintPIDinReadyQueue();//for test
-			PrintPIDinTimerQueue();//for test
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = SystemCallData->Argument[0];
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
-			printf("In Sleep. PID: %d; CurrentTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), currentPCB->WakeUpTime);
-			enTimerQueue(currentPCB);
-			printf("\n");
-			Dispatcher();
+
+			printf("%%%%%%%%%%%%%%%% In Sleep\n");
+			printf("PID: %d; CurrentTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), currentPCB->WakeUpTime);
+
+			enTimerQueueandDispatch(currentPCB);
 			break;
 		case SYSNUM_CREATE_PROCESS:
 			OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],

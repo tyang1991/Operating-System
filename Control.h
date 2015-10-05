@@ -11,3 +11,4 @@ void PrintPIDinReadyQueue();
 void PrintPIDinTimerQueue();
 void PrintCurrentPID();
 void PrintPIDinPCBTable();
+void PrintCurrentState();

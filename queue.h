@@ -56,6 +56,8 @@ void initTimerQueue();
 void enTimerQueue(struct Process_Control_Block *PCB);
 void deTimerQueue();
 int ifPCBinTimerQueue(struct Process_Control_Block *PCB);
+void enTimerQueueandDispatch(struct Process_Control_Block *PCB);
+void deTimerQueueandDispatch();
 
 //PCB table functions
 void initPCBTable();
