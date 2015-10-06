@@ -153,7 +153,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
 
 			printf("%%%%%%%%%%%%%%%% In Sleep\n");
-			printf("PID: %d; CurrentTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), currentPCB->WakeUpTime);
+			printf("PID: %d; CurrentTime: %d; SleepTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), Sleep_Time, currentPCB->WakeUpTime);
 
 			enTimerQueueandDispatch(currentPCB);
 			break;

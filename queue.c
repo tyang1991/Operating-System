@@ -72,7 +72,12 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 	//check Element_Number-1 times because last element doesn't have a pointer to next
 	for (int i = 0; i < pcbTable->Element_Number; i++){
 		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
-			return checkingElement->PCB;
+			if (checkingElement->PCB->ProcessState == PCB_STATE_DEAD){
+				return NULL;
+			}
+			else{
+				return checkingElement->PCB;
+			}
 		}
 		else{
 			//if not found, return null PCB
@@ -210,7 +215,7 @@ void deTimerQueue(){
 void deTimerQueueandDispatch(){
 	deTimerQueue();
 
-	printf("@@@@@@@@@@@@@@@@@@@@@ In de Ready Queue\n");
+	printf("@@@@@@@@@@@@@@@@@@@@@ In de Timer Queue\n");
 	PrintCurrentState();//for test
 
 	Dispatcher();

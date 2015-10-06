@@ -92,8 +92,8 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
-	if (readyQueue->Element_Number != 0 && ( ifPCBinTimerQueue(currentPCB) 
-		|| currentPCB == NULL || currentPCB->ProcessState == PCB_STATE_DEAD) ){
+	if (readyQueue->Element_Number != 0 && 
+		( ifPCBinTimerQueue(currentPCB) || currentPCB == NULL || currentPCB->ProcessState == PCB_STATE_DEAD) ){
 		printf("In Dispatcher if\n");
 		deReadyQueue();
 	}

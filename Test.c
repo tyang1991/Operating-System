@@ -54,6 +54,7 @@
 #include         "string.h"
 #include         "stdlib.h"
 #include         "math.h"
+#include "queue.h"
 
 INT16 Z502_PROGRAM_COUNTER;
 
@@ -977,6 +978,7 @@ void test1x(void) {
 
 	TERMINATE_PROCESS(-1, &ErrorReturned);
 	printf("ERROR: Test1x should be terminated but isn't.\n");
+	printf("PID: %d\n", currentPCB->ProcessID);
 
 }                                                  // End of test1x 
 
