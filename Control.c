@@ -57,15 +57,15 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	//check input
 	if ((int)Priority < 0){
 		*ErrorReturned = ERR_BAD_PARAM;
-		return;
+		return NULL;
 	}
 	else if (findPCBbyProcessName((char*)ProcessName) != NULL){
 		*ErrorReturned = ERR_BAD_PARAM;
-		return;
+		return NULL;
 	}
 	else if (pcbTable->Element_Number >= MAX_PCB_NUMBER){
 		*ErrorReturned = ERR_BAD_PARAM;
-		return;
+		return NULL;
 	}
 	else{
 		*ErrorReturned = ERR_SUCCESS;
@@ -93,7 +93,6 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 
 	printf("Create PCB: ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);
 
-	//return PCB
 	return newPCB;
 }
 

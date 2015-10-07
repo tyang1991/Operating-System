@@ -168,8 +168,10 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			newPCB = OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
 							SystemCallData->Argument[2], SystemCallData->Argument[3], 
 							SystemCallData->Argument[4]);
-			enPCBTable(newPCB);
-			enReadyQueue(newPCB);
+			if (newPCB != NULL) {
+				enPCBTable(newPCB);
+				enReadyQueue(newPCB);
+			}
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			tempPID = (long)SystemCallData->Argument[0];
@@ -287,7 +289,9 @@ void osInit(int argc, char *argv[]) {
 	long ErrorReturned;
 	long newPID;
 	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1dd", (long*)test1d, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
-	enPCBTable(newPCB);
-	enReadyQueue(newPCB);
+	if (newPCB != NULL) {
+		enPCBTable(newPCB);
+		enReadyQueue(newPCB);
+	}
 	Dispatcher();
 }                                               // End of osInit
