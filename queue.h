@@ -35,6 +35,7 @@ struct Timer_Queue{
 	struct Timer_Queue_Element *First_Element;
 };
 
+//structs for Ready Queue
 struct Ready_Queue_Element{
 	struct Process_Control_Block *PCB;
 	struct Ready_Queue_Element *Prev_Element;
@@ -51,23 +52,16 @@ struct Process_Control_Block *currentPCB;
 struct PCB_Table *pcbTable;
 struct Ready_Queue *readyQueue;
 
-//timer queue functions
-void initTimerQueue();
-void enTimerQueue(struct Process_Control_Block *PCB);
-void deTimerQueue();
-int ifPCBinTimerQueue(struct Process_Control_Block *PCB);
-void enTimerQueueandDispatch(struct Process_Control_Block *PCB);
-void deTimerQueueandDispatch();
-
 //PCB table functions
 void initPCBTable();
 void enPCBTable(struct Process_Control_Block *PCB);
-struct Process_Control_Block *findPCBbyProcessID(long ProcessID);
-int findProcessNameInTable(char* ProcessName);
-struct Process_Control_Block *findPCBbyProcessName(char* ProcessName);
-int findPCBIDbyName(char* ProcessName);
+
+//timer queue functions
+void initTimerQueue();
+void enTimerQueue(struct Process_Control_Block *PCB);
+struct Process_Control_Block *deTimerQueue();
 
 //ready queue function
 void initReadyQueue();
 void enReadyQueue(struct Process_Control_Block *PCB);
-void deReadyQueue();
+struct Process_Control_Block *deReadyQueue();

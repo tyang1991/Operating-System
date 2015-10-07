@@ -30,6 +30,7 @@
 #include             <stdlib.h>
 #include             "queue.h"
 #include             "Control.h"
+#include             "Utility.h"
 
 //  Allows the OS and the hardware to agree on where faults occur
 extern void *TO_VECTOR[];
@@ -61,10 +62,13 @@ void InterruptHandler(void) {
 	//Status = mmio.Field2;
 
 /////////////////////////Code go here////////////////////////////////////
-	printf("!!!here is in the interrupt handler\n");
-	printf("  CurrentTime: %d\n    WakeUpTime: %d\n", CurrentTime(), timerQueue->First_Element->PCB->WakeUpTime);
+	struct Process_Control_Block *tmpPCB = deTimerQueue();
+	enReadyQueue(tmpPCB);
 
-	deTimerQueueandDispatch();
+	while (ResetTimer() == 0){
+		tmpPCB = deTimerQueue();
+		enReadyQueue(tmpPCB);
+	}
 
 /////////////////////////Code end here///////////////////////////////////
 	
@@ -121,6 +125,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
 	long Sleep_Time;          //for SYSNUM_SLEEP
 	long returnedContextID;   //for SYSNUM_SLEEP
+	struct Process_Control_Block *newPCB;//for SYSNUM_CREATE_PROCESS
 	long tempPID;//for SYSNUM_TERMINATE_PROCESS
 	struct Process_Control_Block *termPCB;//for SYSNUM_TERMINATE_PROCESS
 	int ReturnedPID;//for SYSNUM_GET_PROCESS_ID
@@ -149,18 +154,22 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			break;
 		case SYSNUM_SLEEP:
 			//Calculate WakeUpTime for PCB
-			Sleep_Time = SystemCallData->Argument[0];
+			Sleep_Time = (long)SystemCallData->Argument[0];
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
-
-			printf("%%%%%%%%%%%%%%%% In Sleep\n");
-			printf("PID: %d; CurrentTime: %d; SleepTime: %d; WakeUpTime: %d\n", currentPCB->ProcessID, CurrentTime(), Sleep_Time, currentPCB->WakeUpTime);
-
-			enTimerQueueandDispatch(currentPCB);
+			//Put current running PCB into timer queue and reset time 
+			enTimerQueue(currentPCB);
+			if (currentPCB == timerQueue->First_Element->PCB){
+				SetTimer(Sleep_Time);
+			}
+			//first PCB in Ready Queue starts
+			Dispatcher();
 			break;
 		case SYSNUM_CREATE_PROCESS:
-			OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
+			newPCB = OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
 							SystemCallData->Argument[2], SystemCallData->Argument[3], 
 							SystemCallData->Argument[4]);
+			enPCBTable(newPCB);
+			enReadyQueue(newPCB);
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			tempPID = (long)SystemCallData->Argument[0];
@@ -194,12 +203,12 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			}
 			else{
 				ReturnedPID = findPCBIDbyName(SystemCallData->Argument[0]);
-				if (ReturnedPID != NULL){
+				if (ReturnedPID != -1){
 					*SystemCallData->Argument[1] = ReturnedPID;
 					*SystemCallData->Argument[2] = ERR_SUCCESS;
 				}
 				else{
-					SystemCallData->Argument[1] = NULL;
+					SystemCallData->Argument[1] = -1;
 					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 				}
 			}
@@ -275,11 +284,10 @@ void osInit(int argc, char *argv[]) {
 
  	} // End of handler for sample code - This routine should never return here
 
-//	long* sss = {(long*) "test1a_a" };
-//	printf("1.%s\n", (char*)sss);
-
 	long ErrorReturned;
 	long newPID;
-	OSCreateProcess((long*)"test1cc", (long*)test1c, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1dd", (long*)test1d, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	enPCBTable(newPCB);
+	enReadyQueue(newPCB);
 	Dispatcher();
 }                                               // End of osInit

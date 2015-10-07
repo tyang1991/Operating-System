@@ -13,29 +13,47 @@ long CurrentTime(){
 	return mmio.Field1;
 }
 
-void ResetTimer(){
+void SetTimer(long SleepTime){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
+	if (SleepTime > 0){
+		mmio.Mode = Z502Start;
+		mmio.Field1 = SleepTime;   // You pick the time units
+		mmio.Field2 = mmio.Field3 = 0;
+		MEM_WRITE(Z502Timer, &mmio);
+	}
+	else{
+//		printf("ERROR: Time reset NEGATIVE!!!");
+	}
+}
 
-	if (timerQueue->Element_Number != 0){
-		long timerReset = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();
-		// Start the timer - here's the sequence to use
-		if (timerReset > 0){
+int ResetTimer(){
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	int SleepTime;
+
+	if (timerQueue->Element_Number > 0){
+		SleepTime = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();
+
+		if (SleepTime > 0){
 			mmio.Mode = Z502Start;
-			mmio.Field1 = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();   // You pick the time units
+			mmio.Field1 = SleepTime;   // You pick the time units
 			mmio.Field2 = mmio.Field3 = 0;
 			MEM_WRITE(Z502Timer, &mmio);
+
+			return 1;
 		}
 		else{
-			deTimerQueueandDispatch();
+			return 0;
 		}
-//		printf("^^^^^^^^^^^^^^^^Timer reset to: %d\n", mmio.Field1);//for test
+	}
+	else{
+		return -1;
 	}
 }
 
 #define MAX_PCB_NUMBER 10
 
-void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
+struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input
 	if ((int)Priority < 0){
 		*ErrorReturned = ERR_BAD_PARAM;
@@ -73,11 +91,10 @@ void OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long 
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	*ProcessID = newPCB->ProcessID;
 
-	printf("New ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);
+	printf("Create PCB: ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);
 
-	//put new PCB into PCB Table and Ready Queue
-	enPCBTable(newPCB);
-	enReadyQueue(newPCB);
+	//return PCB
+	return newPCB;
 }
 
 void OSStartProcess(struct Process_Control_Block* PCB){
@@ -92,25 +109,11 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
-	if (readyQueue->Element_Number != 0 && 
-		( ifPCBinTimerQueue(currentPCB) || currentPCB == NULL || currentPCB->ProcessState == PCB_STATE_DEAD) ){
-		printf("In Dispatcher if\n");
-		deReadyQueue();
+	while (readyQueue->Element_Number == 0){
+		CALL(1);
 	}
-	else{
-		ResetTimer();
-		while (readyQueue->Element_Number == 0){
-			CALL(1);
-		}
-	}
-}
-
-void SuspendProcess(){
-	MEMORY_MAPPED_IO mmio;
-
-	mmio.Mode = Z502StartContext;
-	mmio.Field2 = SUSPEND_CURRENT_CONTEXT_ONLY;
-	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+	struct Process_Control_Block* PCB = deReadyQueue();
+	OSStartProcess(PCB);
 }
 
 void IdleProcess(){
@@ -137,70 +140,4 @@ void TerminateCurrentProcess(){
 	else{
 		Dispatcher();
 	}
-}
-
-void PrintPIDinReadyQueue(){
-	if (readyQueue->Element_Number == 0){
-		return;
-	}
-	else{
-		struct Ready_Queue_Element* checkingElement = readyQueue->First_Element;
-		printf("  ReadyQueue PID list: ");
-		for (int i = 0; i < readyQueue->Element_Number; i++){
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != readyQueue->Element_Number - 1){
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintPIDinTimerQueue() {
-	if (timerQueue->Element_Number == 0) {
-		return;
-	}
-	else {
-		struct Timer_Queue_Element* checkingElement = timerQueue->First_Element;
-		printf("  TimerQueue PID list: ");
-		for (int i = 0; i < timerQueue->Element_Number; i++) {
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != timerQueue->Element_Number - 1) {
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintCurrentPID(){
-	if (currentPCB == NULL){
-		printf("  No currentPCB\n");
-	}
-	else{
-		printf("  Current PID: %d\n", currentPCB->ProcessID);
-	}
-}
-
-void PrintPIDinPCBTable() {
-	if (pcbTable->Element_Number == 0) {
-		return;
-	}
-	else {
-		struct PCB_Table_Element* checkingElement = pcbTable->First_Element;
-		printf("PCBTable PID list: ");
-		for (int i = 0; i < pcbTable->Element_Number; i++) {
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != pcbTable->Element_Number - 1) {
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintCurrentState(){
-	PrintCurrentPID();
-	PrintPIDinReadyQueue();
-	PrintPIDinTimerQueue();
 }

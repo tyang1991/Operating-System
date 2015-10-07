@@ -76,6 +76,7 @@
     <ClCompile Include="sample.c" />
     <ClCompile Include="StatePrinter.c" />
     <ClCompile Include="Test.c" />
+    <ClCompile Include="Utility.c" />
     <ClCompile Include="Z502.c" />
     <ClCompile Include="Control.c" />
   </ItemGroup>
@@ -85,6 +86,7 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="protos.h" />
     <ClInclude Include="syscalls.h" />
+    <ClInclude Include="Utility.h" />
     <ClInclude Include="z502.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
