@@ -214,6 +214,41 @@ struct Process_Control_Block *deReadyQueue(){
 	}
 }
 
+struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
+	if (readyQueue->Element_Number == 0) {
+		printf("There is no element in ready queue\n");
+	}
+	else {
+		lockReadyQueue();
+
+		struct Ready_Queue_Element *checkingElement = readyQueue->First_Element;
+		
+		for (int i = 0; i < readyQueue->Element_Number; i++) {
+			if (checkingElement->PCB->ProcessID == PID) {
+				checkingElement->Next_Element->Prev_Element = checkingElement->Prev_Element;
+				checkingElement->Prev_Element->Next_Element = checkingElement->Next_Element;
+				
+				if (i == 0) {
+					if (readyQueue->Element_Number == 1) {
+						readyQueue->First_Element = NULL;
+					}
+					else {
+						readyQueue->First_Element = readyQueue->First_Element->Next_Element;
+					}
+				}
+			}
+			else {
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+
+		readyQueue->Element_Number -= 1;
+		unlockReadyQueue();
+
+		return checkingElement->PCB;
+	}
+}
+
 void lockReadyQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);

@@ -72,5 +72,6 @@ void unlockTimerQueue();
 void initReadyQueue();
 void enReadyQueue(struct Process_Control_Block *PCB);
 struct Process_Control_Block *deReadyQueue();
+struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID);
 void lockReadyQueue();
 void unlockReadyQueue();

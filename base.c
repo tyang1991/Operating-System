@@ -133,6 +133,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	struct Process_Control_Block *suspendPCB;//for SUSPEND_PROCESS
 	int resumePID;//for RESUME_PROCESS
 	struct Process_Control_Block *resumePCB;//for RESUME_PROCESS
+	int changePrioPID;//for CHANGE_PRIORITY
+	struct Process_Control_Block *changePrioPCB;//for CHANGE_PRIORITY
+	int newPriority;//for CHANGE_PRIORITY
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -227,7 +230,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			break;
 		case SYSNUM_RESUME_PROCESS:
 			resumePID = (int)SystemCallData->Argument[0];
-			resumePCB = findPCBbyProcessID((int)resumePID);
+			resumePCB = findPCBbyProcessID(resumePID);
 
 			if (resumePCB != NULL) {
 				if (resumePCB->ProcessState == PCB_STATE_SUSPEND) {
@@ -263,6 +266,30 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					*SystemCallData->Argument[1] = -1;
 					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 				}
+			}
+			break;
+		case SYSNUM_CHANGE_PRIORITY:
+			changePrioPID = (int)SystemCallData->Argument[0];
+			changePrioPCB = findPCBbyProcessID((int)changePrioPID);
+			newPriority = (int)SystemCallData->Argument[1];
+			if (newPriority<=40 && newPriority>=0) {
+				if (changePrioPCB != NULL) {
+					changePrioPCB->Priority = newPriority;
+					
+					if (changePrioPCB->ProcessLocation == PCB_LOCATION_READY_QUEUE
+										&& newPriority != changePrioPCB->Priority) {
+						changePrioPCB = deCertainPCBFromReadyQueue(changePrioPID);
+						enReadyQueue(changePrioPCB);
+					}
+
+					*SystemCallData->Argument[2] = ERR_SUCCESS;
+				}
+				else {
+					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+				}
+			}
+			else {
+				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 			}
 			break;
 		default:
@@ -338,7 +365,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1f, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1h, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
