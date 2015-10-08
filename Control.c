@@ -125,6 +125,9 @@ void Dispatcher(){
 		else if (PCB->ProcessState == PCB_STATE_DEAD){
 			deReadyQueue();
 		}
+		else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
+			deReadyQueue();
+		}
 	}
 
 	OSStartProcess(PCB);
@@ -152,6 +155,16 @@ void TerminateCurrentProcess(){
 		HaltProcess();
 	}
 	else{
+		Dispatcher();
+	}
+}
+
+void SuspendCurrentProcess() {
+	currentPCB->ProcessState = PCB_STATE_SUSPEND;
+	if (pcbTable->Element_Number == 1) {
+		HaltProcess();
+	}
+	else {
 		Dispatcher();
 	}
 }

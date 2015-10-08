@@ -2,7 +2,7 @@
 int findProcessNameInTable(char* ProcessName);
 int findPCBIDbyName(char* ProcessName);
 struct Process_Control_Block *findPCBbyProcessName(char* ProcessName);
-struct Process_Control_Block *findPCBbyProcessID(long ProcessID);
+struct Process_Control_Block *findPCBbyProcessID(int ProcessID);
 /***************************************************************************/
 
 

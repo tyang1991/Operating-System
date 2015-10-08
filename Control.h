@@ -8,3 +8,4 @@ void SuspendProcess();
 void IdleProcess();
 void HaltProcess();
 void TerminateCurrentProcess();
+void SuspendCurrentProcess();

@@ -63,7 +63,7 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 	return NULL;
 }
 
-struct Process_Control_Block *findPCBbyProcessID(long ProcessID){
+struct Process_Control_Block *findPCBbyProcessID(int ProcessID){
 	//if PCB table is empty, return null PCB
 	if (pcbTable->Element_Number == 0){
 		//		printf("empty pcbTable, NULL returned\n");

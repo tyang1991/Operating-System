@@ -242,8 +242,6 @@ void test1c(void) {
 	CREATE_PROCESS("test1c_d", test1x, PRIORITY1C, &ProcessID4, &ErrorReturned);
 
 	CREATE_PROCESS("test1c_e", test1x, PRIORITY1C, &ProcessID5, &ErrorReturned);
-	PrintPIDinReadyQueue();
-	PrintPIDinPCBTable();
 	// Now we sleep, see if one of the five processes has terminated, and
 	// continue the cycle until one of them is gone.  This allows the test1x
 	// processes to exhibit scheduling.

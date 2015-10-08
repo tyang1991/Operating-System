@@ -1,7 +1,8 @@
 #include             "global.h"
 
 #define PCB_STATE_LIVE 0L
-#define PCB_STATE_DEAD 1L
+#define PCB_STATE_SUSPEND 1L
+#define PCB_STATE_DEAD 2L
 #define PCB_LOCATION_FLOATING 0L
 #define PCB_LOCATION_READY_QUEUE 1L
 #define PCB_LOCATION_TIMER_QUEUE 2L

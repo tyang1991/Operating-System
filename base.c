@@ -122,15 +122,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	short i;
 
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
-	INT32 Temp_Clock;         //for SYSNUM_GET_TIME_OF_DAY
-	long Sleep_Time;          //for SYSNUM_SLEEP
-	long returnedContextID;   //for SYSNUM_SLEEP
-	struct Process_Control_Block *newPCB;//for SYSNUM_CREATE_PROCESS
-	long tempPID;//for SYSNUM_TERMINATE_PROCESS
-	struct Process_Control_Block *termPCB;//for SYSNUM_TERMINATE_PROCESS
-	int ReturnedPID;//for SYSNUM_GET_PROCESS_ID
-	char* ProcessName;//for SYSNUM_GET_PROCESS_ID
-	struct Process_Control_Block *returnedPCB;
+	INT32 Temp_Clock;         //for GET_TIME_OF_DAY
+	long Sleep_Time;          //for SLEEP
+	struct Process_Control_Block *newPCB;//for CREATE_PROCESS
+	long tempPID;//for TERMINATE_PROCESS
+	struct Process_Control_Block *termPCB;//for TERMINATE_PROCESS
+	int ReturnedPID;//for GET_PROCESS_ID
+	char* ProcessName;//for GET_PROCESS_ID
+	int suspendPID;//for SUSPEND_PROCESS
+	struct Process_Control_Block *suspendPCB;//for SUSPEND_PROCESS
+	int resumePID;//for RESUME_PROCESS
+	struct Process_Control_Block *resumePCB;//for RESUME_PROCESS
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -198,6 +200,53 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				//if PCB running, call Dispatcher
 			}
 			break;
+		case SYSNUM_SUSPEND_PROCESS:
+			suspendPID = (int)SystemCallData->Argument[0];
+			if (suspendPID == -1) {
+				SuspendCurrentProcess();
+			}
+			else {
+				suspendPCB = findPCBbyProcessID((int)suspendPID);
+				if (suspendPCB != NULL) {
+					if (suspendPCB->ProcessState == PCB_STATE_LIVE) {
+						suspendPCB->ProcessState = PCB_STATE_SUSPEND;
+						*SystemCallData->Argument[1] = ERR_SUCCESS;
+
+						if (currentPCB == suspendPCB) {
+							SuspendCurrentProcess();
+						}
+					}
+					else {
+						*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+					}
+				}
+				else {
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
+			}
+			break;
+		case SYSNUM_RESUME_PROCESS:
+			resumePID = (int)SystemCallData->Argument[0];
+			resumePCB = findPCBbyProcessID((int)resumePID);
+
+			if (resumePCB != NULL) {
+				if (resumePCB->ProcessState == PCB_STATE_SUSPEND) {
+					resumePCB->ProcessState = PCB_STATE_LIVE;
+
+					if (resumePCB->ProcessLocation == PCB_LOCATION_FLOATING) {
+						enReadyQueue(resumePCB);
+					}
+
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+				}
+				else {
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
+			}
+			else {
+				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+			}
+			break;
 		case SYSNUM_GET_PROCESS_ID:
 			ProcessName = (char*)SystemCallData->Argument[0];
 			if (strcmp(ProcessName,"") == 0){
@@ -205,13 +254,13 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				*SystemCallData->Argument[2] = ERR_SUCCESS;
 			}
 			else{
-				ReturnedPID = findPCBIDbyName(SystemCallData->Argument[0]);
+				ReturnedPID = findPCBIDbyName(ProcessName);
 				if (ReturnedPID != -1){
 					*SystemCallData->Argument[1] = ReturnedPID;
 					*SystemCallData->Argument[2] = ERR_SUCCESS;
 				}
 				else{
-					SystemCallData->Argument[1] = -1;
+					*SystemCallData->Argument[1] = -1;
 					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 				}
 			}
@@ -289,7 +338,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1ee", (long*)test1e, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1f, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
