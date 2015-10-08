@@ -89,6 +89,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	strcpy(newProcessName, (char*)ProcessName);//
 	newPCB->ProcessName = newProcessName;
 	newPCB->ProcessState = PCB_STATE_LIVE;
+	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
 	*ProcessID = newPCB->ProcessID;
 
 	printf("Create PCB: ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);

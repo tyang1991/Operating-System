@@ -43,7 +43,9 @@ void initTimerQueue(){
 }
 
 void enTimerQueue(struct Process_Control_Block *PCB){
+	//lock timer queue
 	lockTimerQueue();
+	PCB->ProcessLocation = PCB_LOCATION_TIMER_QUEUE;
 
 	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
 	newElement->PCB = PCB;
@@ -87,6 +89,7 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 	}
 	timerQueue->Element_Number += 1;
 
+	//unlock timer queue
 	unlockTimerQueue();
 }
 
@@ -96,8 +99,9 @@ struct Process_Control_Block *deTimerQueue(){
 	}
 	else{
 		lockTimerQueue();
-
 		struct Process_Control_Block *PCB = timerQueue->First_Element->PCB;
+		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
+
 		if (timerQueue->Element_Number == 1){
 			timerQueue->First_Element = NULL;
 		}
@@ -140,6 +144,7 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 	struct Ready_Queue_Element *newElement = (struct Ready_Queue_Element*)malloc(sizeof(struct Ready_Queue_Element));
 	newElement->PCB = PCB;
 	int insertPosition = -1;
+	PCB->ProcessLocation = PCB_LOCATION_READY_QUEUE;
 
 	if (readyQueue->Element_Number == 0){
 		//build ready queue element
@@ -189,8 +194,9 @@ struct Process_Control_Block *deReadyQueue(){
 	}
 	else{
 		lockReadyQueue();
-
 		struct Process_Control_Block *PCB = readyQueue->First_Element->PCB;
+		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
+
 		if (readyQueue->Element_Number == 1){
 			readyQueue->First_Element = NULL;
 		}
