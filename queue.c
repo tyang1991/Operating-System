@@ -3,6 +3,17 @@
 #include "string.h"
 #include "Control.h"
 #include "syscalls.h"
+#include "global.h"
+
+#define                  DO_LOCK                     1
+#define                  DO_UNLOCK                   0
+#define                  SUSPEND_UNTIL_LOCKED        TRUE
+#define                  DO_NOT_SUSPEND              FALSE
+INT32 LockResult;
+char mySuccess[] = "      Action Failed\0        Action Succeeded";
+#define          mySPART          22
+#define      MEMORY_INTERLOCK_READY_QUEUE     MEMORY_INTERLOCK_BASE+1
+#define      MEMORY_INTERLOCK_TIMER_QUEUE     MEMORY_INTERLOCK_READY_QUEUE+1
 
 //PCB Table
 void initPCBTable(){
@@ -32,6 +43,8 @@ void initTimerQueue(){
 }
 
 void enTimerQueue(struct Process_Control_Block *PCB){
+	lockTimerQueue();
+
 	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
 	newElement->PCB = PCB;
 	int insertPosition = -1;
@@ -73,6 +86,8 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 		timerQueue->First_Element = newElement;
 	}
 	timerQueue->Element_Number += 1;
+
+	unlockTimerQueue();
 }
 
 struct Process_Control_Block *deTimerQueue(){
@@ -80,6 +95,8 @@ struct Process_Control_Block *deTimerQueue(){
 		printf("There is no element in timer queue\n");
 	}
 	else{
+		lockTimerQueue();
+
 		struct Process_Control_Block *PCB = timerQueue->First_Element->PCB;
 		if (timerQueue->Element_Number == 1){
 			timerQueue->First_Element = NULL;
@@ -91,9 +108,24 @@ struct Process_Control_Block *deTimerQueue(){
 			timerQueue->First_Element = timerQueue->First_Element->Next_Element;
 		}
 		timerQueue->Element_Number -= 1;
+
+		unlockTimerQueue();
+
 		//return timerout PCB
 		return PCB;
 	}
+}
+
+void lockTimerQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_TIMER_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+
+void unlockTimerQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_TIMER_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 //Ready Queue
@@ -103,6 +135,8 @@ void initReadyQueue(){
 }
 
 void enReadyQueue(struct Process_Control_Block *PCB){
+	lockReadyQueue();
+
 	struct Ready_Queue_Element *newElement = (struct Ready_Queue_Element*)malloc(sizeof(struct Ready_Queue_Element));
 	newElement->PCB = PCB;
 	int insertPosition = -1;
@@ -145,6 +179,8 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		readyQueue->First_Element = newElement;
 	}
 	readyQueue->Element_Number += 1;
+
+	unlockReadyQueue();
 }
 
 struct Process_Control_Block *deReadyQueue(){
@@ -152,6 +188,8 @@ struct Process_Control_Block *deReadyQueue(){
 		printf("There is no element in ready queue\n");
 	}
 	else{
+		lockReadyQueue();
+
 		struct Process_Control_Block *PCB = readyQueue->First_Element->PCB;
 		if (readyQueue->Element_Number == 1){
 			readyQueue->First_Element = NULL;
@@ -162,7 +200,22 @@ struct Process_Control_Block *deReadyQueue(){
 			readyQueue->First_Element = readyQueue->First_Element->Next_Element;
 		}
 		readyQueue->Element_Number -= 1;
+
+		unlockReadyQueue();
+
 		//return timerout PCB
 		return PCB;
 	}
+}
+
+void lockReadyQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+
+void unlockReadyQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }

@@ -60,8 +60,12 @@ void enPCBTable(struct Process_Control_Block *PCB);
 void initTimerQueue();
 void enTimerQueue(struct Process_Control_Block *PCB);
 struct Process_Control_Block *deTimerQueue();
+void lockTimerQueue();
+void unlockTimerQueue();
 
 //ready queue function
 void initReadyQueue();
 void enReadyQueue(struct Process_Control_Block *PCB);
 struct Process_Control_Block *deReadyQueue();
+void lockReadyQueue();
+void unlockReadyQueue();
