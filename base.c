@@ -187,14 +187,15 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				if (termPCB != NULL){
 					termPCB->ProcessState = PCB_STATE_DEAD;
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					
+					if (currentPCB == termPCB){
+						TerminateCurrentProcess();
+					}
 				}
 				else{
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
 				//if PCB running, call Dispatcher
-				if (currentPCB == termPCB){
-					Dispatcher();
-				}
 			}
 			break;
 		case SYSNUM_GET_PROCESS_ID:

@@ -108,10 +108,24 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 }
 
 void Dispatcher(){
-	while (readyQueue->Element_Number == 0){
-		CALL(1);
+	struct Process_Control_Block *PCB;//for temp use
+
+	while (1){
+		while (readyQueue->Element_Number == 0){
+			CALL(1);
+		}
+
+		PCB = readyQueue->First_Element->PCB;
+
+		if (PCB->ProcessState == PCB_STATE_LIVE){
+			PCB = deReadyQueue();
+			break;
+		}
+		else if (PCB->ProcessState == PCB_STATE_DEAD){
+			deReadyQueue();
+		}
 	}
-	struct Process_Control_Block* PCB = deReadyQueue();
+
 	OSStartProcess(PCB);
 }
 
