@@ -125,7 +125,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	INT32 Temp_Clock;         //for GET_TIME_OF_DAY
 	long Sleep_Time;          //for SLEEP
 	struct Process_Control_Block *newPCB;//for CREATE_PROCESS
-	long tempPID;//for TERMINATE_PROCESS
+	long termPID;//for TERMINATE_PROCESS
 	struct Process_Control_Block *termPCB;//for TERMINATE_PROCESS
 	int ReturnedPID;//for GET_PROCESS_ID
 	char* ProcessName;//for GET_PROCESS_ID
@@ -158,6 +158,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
 		case SYSNUM_SLEEP:
+			//print states
+			SchedularPrinter("Sleep", CurrentPID());
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = (long)SystemCallData->Argument[0];
 			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
@@ -174,28 +176,37 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 							SystemCallData->Argument[2], SystemCallData->Argument[3], 
 							SystemCallData->Argument[4]);
 			if (newPCB != NULL) {
+				SchedularPrinter("Create", newPCB->ProcessID);//print states
 				enPCBTable(newPCB);
 				enReadyQueue(newPCB);
 			}
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
-			tempPID = (long)SystemCallData->Argument[0];
-			if (tempPID == -1){
-				TerminateCurrentProcess();
+			termPID = (long)SystemCallData->Argument[0];
+			if (termPID == -1){
+				if (PCBLiveNumber() > 1) {
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					//print states
+					SchedularPrinter("Terminate", termPID);
+					//terminate current PCB
+					TerminateProcess(CurrentPCB());
+				}
+				else {
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
 			}
-			if (tempPID == -2){
+			if (termPID == -2){
+				*SystemCallData->Argument[1] = ERR_SUCCESS;
 				HaltProcess();
 			}
 			else{
 				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
-				//if PCB found, return SUCCESS; otherwise, return BAD
-				if (termPCB != NULL){
-					termPCB->ProcessState = PCB_STATE_DEAD;
+				if (termPCB != NULL && PCBLiveNumber() > 1){
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
-					
-					if (currentPCB == termPCB){
-						TerminateCurrentProcess();
-					}
+					//print states
+					SchedularPrinter("Terminate", termPID);
+					//terminate specified PCB
+					TerminateProcess(termPCB);
 				}
 				else{
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
@@ -206,18 +217,26 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_SUSPEND_PROCESS:
 			suspendPID = (int)SystemCallData->Argument[0];
 			if (suspendPID == -1) {
-				SuspendCurrentProcess();
+				if (PCBLiveNumber() > 1) {
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					//print states
+					SchedularPrinter("Suspend", suspendPID);
+					//Suspend Current Process
+					SuspendProcess(CurrentPCB());
+				}
+				else {
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
 			}
 			else {
 				suspendPCB = findPCBbyProcessID((int)suspendPID);
 				if (suspendPCB != NULL) {
-					if (suspendPCB->ProcessState == PCB_STATE_LIVE) {
-						suspendPCB->ProcessState = PCB_STATE_SUSPEND;
+					if (suspendPCB->ProcessState == PCB_STATE_LIVE && PCBLiveNumber() > 1) {
 						*SystemCallData->Argument[1] = ERR_SUCCESS;
-
-						if (currentPCB == suspendPCB) {
-							SuspendCurrentProcess();
-						}
+						//print states
+						SchedularPrinter("Suspend", suspendPID);
+						//Suspend specified process
+						SuspendProcess(suspendPCB);
 					}
 					else {
 						*SystemCallData->Argument[1] = ERR_BAD_PARAM;
@@ -231,16 +250,20 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_RESUME_PROCESS:
 			resumePID = (int)SystemCallData->Argument[0];
 			resumePCB = findPCBbyProcessID(resumePID);
-
 			if (resumePCB != NULL) {
 				if (resumePCB->ProcessState == PCB_STATE_SUSPEND) {
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					//print states
+					SchedularPrinter("Resume", resumePID);
+					//Resume specified process
+					ResumeProcess(resumePCB);
+					/*
 					resumePCB->ProcessState = PCB_STATE_LIVE;
 
 					if (resumePCB->ProcessLocation == PCB_LOCATION_FLOATING) {
 						enReadyQueue(resumePCB);
-					}
+					}*/
 
-					*SystemCallData->Argument[1] = ERR_SUCCESS;
 				}
 				else {
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
@@ -274,15 +297,18 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			newPriority = (int)SystemCallData->Argument[1];
 			if (newPriority<=40 && newPriority>=0) {
 				if (changePrioPCB != NULL) {
+					*SystemCallData->Argument[2] = ERR_SUCCESS;
 					changePrioPCB->Priority = newPriority;
+					//print states
+					SchedularPrinter("ChangePrio", changePrioPID);
 					
 					if (changePrioPCB->ProcessLocation == PCB_LOCATION_READY_QUEUE
 										&& newPriority != changePrioPCB->Priority) {
 						changePrioPCB = deCertainPCBFromReadyQueue(changePrioPID);
 						enReadyQueue(changePrioPCB);
 					}
-
-					*SystemCallData->Argument[2] = ERR_SUCCESS;
+					//print states
+					SchedularPrinter("ChangePrio", changePrioPID);
 				}
 				else {
 					*SystemCallData->Argument[2] = ERR_BAD_PARAM;

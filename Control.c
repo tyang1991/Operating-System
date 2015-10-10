@@ -3,6 +3,7 @@
 #include "syscalls.h"
 #include "queue.h"
 #include "Control.h"
+#include "Utility.h"
 
 long CurrentTime(){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
@@ -11,6 +12,32 @@ long CurrentTime(){
 	mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
 	MEM_READ(Z502Clock, &mmio);
 	return mmio.Field1;
+}
+
+long CurrentContext() {
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+
+	mmio.Mode = Z502GetCurrentContext;
+	mmio.Field1 = mmio.Field2 = mmio.Field3 = mmio.Field4 = 0;
+	MEM_READ(Z502Context, &mmio);
+	return mmio.Field1;
+}
+
+struct Process_Control_Block *CurrentPCB() {
+	long currentContext = CurrentContext();
+	struct Process_Control_Block *PCB = findPCBbyContextID(currentContext);
+	return PCB;
+}
+
+int CurrentPID() {
+	long currentContext = CurrentContext();
+	struct Process_Control_Block *PCB = findPCBbyContextID(currentContext);
+	if (PCB != NULL) {
+		return PCB->ProcessID;
+	}
+	else {
+		return -1;
+	}
 }
 
 void SetTimer(long SleepTime){
@@ -84,7 +111,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 
 	newPCB->ContextID = mmio.Field1;
 	newPCB->Priority = (int)Priority;
-	newPCB->ProcessID = pcbTable->Element_Number + 1;
+	newPCB->ProcessID = pcbTable->Element_Number ;
 	char* newProcessName = (char*)calloc(sizeof(char),16);
 	strcpy(newProcessName, (char*)ProcessName);//
 	newPCB->ProcessName = newProcessName;
@@ -122,7 +149,7 @@ void Dispatcher(){
 			PCB = deReadyQueue();
 			break;
 		}
-		else if (PCB->ProcessState == PCB_STATE_DEAD){
+		else if (PCB->ProcessState == PCB_STATE_TERMINATE){
 			deReadyQueue();
 		}
 		else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
@@ -149,22 +176,45 @@ void HaltProcess(){
 	MEM_WRITE(Z502Halt, &mmio);
 }
 
-void TerminateCurrentProcess(){
-	currentPCB->ProcessState = PCB_STATE_DEAD;
-	if (pcbTable->Element_Number == 1){
-		HaltProcess();
-	}
-	else{
-		Dispatcher();
+void TerminateProcess(struct Process_Control_Block *PCB) {
+	if (PCB != NULL) {
+		if (PCBLiveNumber() > 1) {
+			PCB->ProcessState = PCB_STATE_TERMINATE;
+			pcbTable->Terminated_Number += 1;
+
+			if (PCB == CurrentPCB()) {
+				Dispatcher();
+			}
+		}
+		else {
+			HaltProcess();
+		}
 	}
 }
 
-void SuspendCurrentProcess() {
-	currentPCB->ProcessState = PCB_STATE_SUSPEND;
-	if (pcbTable->Element_Number == 1) {
-		HaltProcess();
+void SuspendProcess(struct Process_Control_Block *PCB) {
+	if (PCB != NULL) {
+		if (PCBLiveNumber() > 1) {
+			PCB->ProcessState = PCB_STATE_SUSPEND;
+			pcbTable->Suspended_Number += 1;
+
+			if (PCB == CurrentPCB()) {
+				Dispatcher();
+			}
+		}
 	}
-	else {
-		Dispatcher();
+}
+
+void ResumeProcess(struct Process_Control_Block *PCB) {
+	if (PCB != NULL) {
+		if (PCB->ProcessState == PCB_STATE_SUSPEND) {
+			PCB->ProcessState = PCB_STATE_LIVE;
+			pcbTable->Suspended_Number -= 1;
+
+			if (PCB->ProcessLocation != PCB_LOCATION_READY_QUEUE
+				&& PCB->ProcessLocation != PCB_LOCATION_TIMER_QUEUE) {
+				enReadyQueue(PCB);
+			}
+		}
 	}
 }

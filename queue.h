@@ -2,7 +2,7 @@
 
 #define PCB_STATE_LIVE 0L
 #define PCB_STATE_SUSPEND 1L
-#define PCB_STATE_DEAD 2L
+#define PCB_STATE_TERMINATE 2L
 #define PCB_LOCATION_FLOATING 0L
 #define PCB_LOCATION_READY_QUEUE 1L
 #define PCB_LOCATION_TIMER_QUEUE 2L
@@ -25,6 +25,8 @@ struct PCB_Table_Element {
 
 struct PCB_Table {
 	int Element_Number;
+	int Terminated_Number;
+	int Suspended_Number;
 	struct PCB_Table_Element *First_Element;
 };
 
@@ -60,6 +62,7 @@ struct Ready_Queue *readyQueue;
 //PCB table functions
 void initPCBTable();
 void enPCBTable(struct Process_Control_Block *PCB);
+int PCBLiveNumber();
 
 //timer queue functions
 void initTimerQueue();

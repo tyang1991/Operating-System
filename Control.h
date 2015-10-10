@@ -1,11 +1,15 @@
 void SetTimer(long SleepTime);
 int ResetTimer();
 long CurrentTime();
+long CurrentContext();
+struct Process_Control_Block *CurrentPCB();
+int CurrentPID();
 struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, long *priority, long *ProcessID, long *ErrorReturned);
 void OSStartProcess(struct Process_Control_Block* PCB);
 void Dispatcher();
 void SuspendProcess();
 void IdleProcess();
 void HaltProcess();
-void TerminateCurrentProcess();
-void SuspendCurrentProcess();
+void TerminateProcess(struct Process_Control_Block *PCB);
+void SuspendProcess(struct Process_Control_Block *PCB);
+void ResumeProcess(struct Process_Control_Block *PCB);

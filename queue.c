@@ -4,6 +4,7 @@
 #include "Control.h"
 #include "syscalls.h"
 #include "global.h"
+#include "Utility.h"
 
 #define                  DO_LOCK                     1
 #define                  DO_UNLOCK                   0
@@ -19,6 +20,8 @@ char mySuccess[] = "      Action Failed\0        Action Succeeded";
 void initPCBTable(){
 	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
 	pcbTable->Element_Number = 0;
+	pcbTable->Suspended_Number = 0;
+	pcbTable->Terminated_Number = 0;
 }
 
 void enPCBTable(struct Process_Control_Block *PCB){
@@ -36,6 +39,10 @@ void enPCBTable(struct Process_Control_Block *PCB){
 	pcbTable->Element_Number += 1;
 }
 
+int PCBLiveNumber() {
+	return pcbTable->Element_Number - pcbTable->Suspended_Number - pcbTable->Terminated_Number;
+}
+
 //Timer Queue
 void initTimerQueue(){
 	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));
@@ -45,6 +52,7 @@ void initTimerQueue(){
 void enTimerQueue(struct Process_Control_Block *PCB){
 	//lock timer queue
 	lockTimerQueue();
+	//Set Location
 	PCB->ProcessLocation = PCB_LOCATION_TIMER_QUEUE;
 
 	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
@@ -96,10 +104,12 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 struct Process_Control_Block *deTimerQueue(){
 	if (timerQueue->Element_Number == 0){
 		printf("There is no element in timer queue\n");
+		return NULL;
 	}
 	else{
 		lockTimerQueue();
 		struct Process_Control_Block *PCB = timerQueue->First_Element->PCB;
+
 		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
 
 		if (timerQueue->Element_Number == 1){
@@ -139,6 +149,7 @@ void initReadyQueue(){
 }
 
 void enReadyQueue(struct Process_Control_Block *PCB){
+	//lock ready queue
 	lockReadyQueue();
 
 	struct Ready_Queue_Element *newElement = (struct Ready_Queue_Element*)malloc(sizeof(struct Ready_Queue_Element));
@@ -191,10 +202,14 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 struct Process_Control_Block *deReadyQueue(){
 	if (readyQueue->Element_Number == 0){
 		printf("There is no element in ready queue\n");
+		return NULL;
 	}
 	else{
+		//lock ready queue
 		lockReadyQueue();
+
 		struct Process_Control_Block *PCB = readyQueue->First_Element->PCB;
+
 		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
 
 		if (readyQueue->Element_Number == 1){
@@ -217,6 +232,7 @@ struct Process_Control_Block *deReadyQueue(){
 struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
 	if (readyQueue->Element_Number == 0) {
 		printf("There is no element in ready queue\n");
+		return NULL;
 	}
 	else {
 		lockReadyQueue();
@@ -227,7 +243,7 @@ struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
 			if (checkingElement->PCB->ProcessID == PID) {
 				checkingElement->Next_Element->Prev_Element = checkingElement->Prev_Element;
 				checkingElement->Prev_Element->Next_Element = checkingElement->Next_Element;
-				
+
 				if (i == 0) {
 					if (readyQueue->Element_Number == 1) {
 						readyQueue->First_Element = NULL;
