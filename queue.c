@@ -13,10 +13,11 @@
 INT32 LockResult;
 char mySuccess[] = "      Action Failed\0        Action Succeeded";
 #define          mySPART          22
-#define      MEMORY_INTERLOCK_READY_QUEUE     MEMORY_INTERLOCK_BASE+1
+#define      MEMORY_INTERLOCK_PCB_Table       MEMORY_INTERLOCK_BASE+1
+#define      MEMORY_INTERLOCK_READY_QUEUE     MEMORY_INTERLOCK_PCB_Table+1
 #define      MEMORY_INTERLOCK_TIMER_QUEUE     MEMORY_INTERLOCK_READY_QUEUE+1
-
-//PCB Table
+#define      MEMORY_INTERLOCK_MESSAGE_TABLE   MEMORY_INTERLOCK_TIMER_QUEUE+1
+/*********************PCB Table************************/
 void initPCBTable(){
 	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
 	pcbTable->Element_Number = 0;
@@ -25,6 +26,8 @@ void initPCBTable(){
 }
 
 void enPCBTable(struct Process_Control_Block *PCB){
+	lockPCBTable();
+
 	struct PCB_Table_Element *newElement = (struct PCB_Table_Element*)malloc(sizeof(struct PCB_Table_Element));
 	newElement->PCB = PCB;
 
@@ -37,13 +40,29 @@ void enPCBTable(struct Process_Control_Block *PCB){
 		pcbTable->First_Element = newElement;
 	}
 	pcbTable->Element_Number += 1;
+
+	unlockPCBTable();
 }
 
 int PCBLiveNumber() {
 	return pcbTable->Element_Number - pcbTable->Suspended_Number - pcbTable->Terminated_Number;
 }
 
-//Timer Queue
+void lockPCBTable() {
+	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+
+void unlockPCBTable() {
+	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+
+/*******************************************************/
+
+/*********************Timer Queue**********************/
 void initTimerQueue(){
 	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));
 	timerQueue->Element_Number = 0;
@@ -141,8 +160,9 @@ void unlockTimerQueue() {
 		&LockResult);
 //	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
+/*******************************************************/
 
-//Ready Queue
+/*********************Ready Queue**********************/
 void initReadyQueue(){
 	readyQueue = (struct Ready_Queue*)malloc(sizeof(struct Ready_Queue));
 	readyQueue->Element_Number = 0;
@@ -275,4 +295,65 @@ void unlockReadyQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
 //	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+/*******************************************************/
+
+/************************Message************************/
+void initMessageTable() {
+	messageTable = (struct Message_Table*)malloc(sizeof(struct Message_Table));
+	messageTable->Element_Number = 0;
+}
+
+#define         MAX_MESSAGE_LENGTH           (INT16)64
+
+struct Message *CreateMessage(long Target_PID, long Sender_PID, char *Message_Buffer, long SendLength, long *ErrorReturned) {
+	//check input
+	if (Target_PID < -1 || Target_PID > pcbTable->Element_Number - 1) {
+		*ErrorReturned = ERR_BAD_PARAM;
+	}
+	else if (SendLength < 0 || SendLength > MAX_MESSAGE_LENGTH) {
+		*ErrorReturned = ERR_BAD_PARAM;
+	}
+	else {
+		*ErrorReturned = ERR_SUCCESS;
+	}
+
+	struct Message *newMessage = (struct Message*)malloc(sizeof(struct Message));
+	newMessage->Target_PID = Target_PID;
+	newMessage->Sender_PID = Sender_PID;
+	char *newMessageBuffer = (char*)calloc(sizeof(char), MAX_MESSAGE_LENGTH);
+	strcpy(newMessageBuffer, Message_Buffer);
+	newMessage->Message_Buffer = newMessageBuffer;
+	newMessage->Message_Length = SendLength;
+
+	return newMessage;
+}
+
+void enMessageTable(struct Message *Message) {
+	lockMessageTable();
+
+	struct Message_Table_Element *newElement = (struct Message_Table_Element*)malloc(sizeof(struct Message_Table_Element));
+	newElement->Message = Message;
+	if (messageTable->Element_Number == 0) {
+		messageTable->First_Element = newElement;
+	}
+	else {
+		newElement->Next_Element = messageTable->First_Element;
+		messageTable->First_Element = newElement;
+	}
+	messageTable->Element_Number += 1;
+
+	unlockMessageTable();
+}
+
+void lockMessageTable() {
+	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
+}
+
+void unlockMessageTable() {
+	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }

@@ -121,22 +121,38 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	static short do_print = 10;
 	short i;
 
-	MEMORY_MAPPED_IO mmio;    //for hardware interface
-	INT32 Temp_Clock;         //for GET_TIME_OF_DAY
-	long Sleep_Time;          //for SLEEP
-	struct Process_Control_Block *newPCB;//for CREATE_PROCESS
-	long termPID;//for TERMINATE_PROCESS
-	struct Process_Control_Block *termPCB;//for TERMINATE_PROCESS
-	int ReturnedPID;//for GET_PROCESS_ID
-	char* ProcessName;//for GET_PROCESS_ID
-	struct Process_Control_Block *PCBbyProcessName;//for GET_PROCESS_ID
-	int suspendPID;//for SUSPEND_PROCESS
-	struct Process_Control_Block *suspendPCB;//for SUSPEND_PROCESS
-	int resumePID;//for RESUME_PROCESS
-	struct Process_Control_Block *resumePCB;//for RESUME_PROCESS
-	int changePrioPID;//for CHANGE_PRIORITY
-	struct Process_Control_Block *changePrioPCB;//for CHANGE_PRIORITY
-	int newPriority;//for CHANGE_PRIORITY
+	//for hardware interface
+	MEMORY_MAPPED_IO mmio;
+	//for GET_TIME_OF_DAY
+	INT32 Temp_Clock;
+	//for SLEEP
+	long Sleep_Time;
+	//for CREATE_PROCESS
+	struct Process_Control_Block *newPCB;
+	//for TERMINATE_PROCESS
+	long termPID;
+	struct Process_Control_Block *termPCB;
+	//for GET_PROCESS_ID
+	int ReturnedPID;
+	char* ProcessName;
+	struct Process_Control_Block *PCBbyProcessName;
+	//for SUSPEND_PROCESS
+	int suspendPID;
+	struct Process_Control_Block *suspendPCB;
+	//for RESUME_PROCESS
+	int resumePID;
+	struct Process_Control_Block *resumePCB;
+	//for CHANGE_PRIORITY
+	int changePrioPID;
+	struct Process_Control_Block *changePrioPCB;
+	int newPriority;
+	//for SEND_MESSAGE
+	long TargetPID;
+	struct Process_Control_Block *SenderPCB;
+	long SenderPID;
+	char *MessageBuffer;
+	long SendLength;
+	struct Message *MessageCreated;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -236,7 +252,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				else{
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
-				//if PCB running, call Dispatcher
 			}
 			break;
 		case SYSNUM_SUSPEND_PROCESS:
@@ -330,6 +345,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 			}
 			break;
+		case SYSNUM_SEND_MESSAGE:
+			TargetPID = (long)SystemCallData->Argument[0];
+			MessageBuffer = (char*)SystemCallData->Argument[1];
+			SendLength = (long)SystemCallData->Argument[2];
+			SenderPCB = CurrentPCB();
+			SenderPID = SenderPCB->ProcessID;
+
+			MessageCreated = CreateMessage(TargetPID, SenderPID, MessageBuffer, 
+				                      SendLength, SystemCallData->Argument[3]);
+			enMessageTable(MessageCreated);
+			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
 			printf("Call_type is - %i\n", call_type);
@@ -353,6 +379,7 @@ void osInit(int argc, char *argv[]) {
 	initPCBTable();
 	initTimerQueue();
 	initReadyQueue();
+	initMessageTable();
 
   // Demonstrates how calling arguments are passed thru to here       
 
@@ -403,7 +430,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1f, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1c, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

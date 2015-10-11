@@ -113,7 +113,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	newPCB->Priority = (int)Priority;
 	newPCB->ProcessID = pcbTable->Element_Number ;
 	char* newProcessName = (char*)calloc(sizeof(char),16);
-	strcpy(newProcessName, (char*)ProcessName);//
+	strcpy(newProcessName, (char*)ProcessName);
 	newPCB->ProcessName = newProcessName;
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
