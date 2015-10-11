@@ -5,21 +5,6 @@
 #include "syscalls.h"
 
 /********************  Find  ***********************************************/
-int findProcessNameInTable(char* ProcessName){
-	if (pcbTable->Element_Number == 0){
-		return 0;// if no PCB, return 0
-	}
-	else{
-		struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
-		for (int i = 0; i < pcbTable->Element_Number; i++){
-			if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
-				return 1;//if find a same ProcessName, return 1
-			}
-		}
-	}
-	return 0;//if ProcessName not found, return 0
-}
-
 int findPCBIDbyName(char* ProcessName){
 	if (findPCBbyProcessName(ProcessName) != NULL){
 		struct Process_Control_Block *PCB = findPCBbyProcessName(ProcessName);
@@ -194,7 +179,7 @@ void PrintCurrentState(){
 /************************** Scheduler Printer*******************************/
 
 //define whether to print states. 1 to print; 0 not to print
-#define PRINTSTATES 1
+#define PRINTSTATES 0
 
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {

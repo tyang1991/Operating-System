@@ -129,6 +129,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	struct Process_Control_Block *termPCB;//for TERMINATE_PROCESS
 	int ReturnedPID;//for GET_PROCESS_ID
 	char* ProcessName;//for GET_PROCESS_ID
+	struct Process_Control_Block *PCBbyProcessName;//for GET_PROCESS_ID
 	int suspendPID;//for SUSPEND_PROCESS
 	struct Process_Control_Block *suspendPCB;//for SUSPEND_PROCESS
 	int resumePID;//for RESUME_PROCESS
@@ -157,6 +158,40 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Temp_Clock = mmio.Field1;
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
+		case SYSNUM_CREATE_PROCESS:
+			newPCB = OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
+							SystemCallData->Argument[2], SystemCallData->Argument[3], 
+							SystemCallData->Argument[4]);
+			if (newPCB != NULL) {
+				SchedularPrinter("Create", newPCB->ProcessID);//print states
+				enPCBTable(newPCB);
+				enReadyQueue(newPCB);
+			}
+			break;
+		case SYSNUM_GET_PROCESS_ID:
+			ProcessName = (char*)SystemCallData->Argument[0];
+			if (strcmp(ProcessName, "") == 0) {
+				*SystemCallData->Argument[1] = currentPCB->ProcessID;
+				*SystemCallData->Argument[2] = ERR_SUCCESS;
+			}
+			else {
+				PCBbyProcessName = findPCBbyProcessName(ProcessName);
+				if (PCBbyProcessName != NULL) {
+					ReturnedPID = PCBbyProcessName->ProcessID;
+					if (ReturnedPID != -1) {
+						*SystemCallData->Argument[1] = ReturnedPID;
+						*SystemCallData->Argument[2] = ERR_SUCCESS;
+					}
+					else {
+						*SystemCallData->Argument[1] = -1;
+						*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+					}
+				}
+				else {
+					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+				}
+			}
+			break;
 		case SYSNUM_SLEEP:
 			//print states
 			SchedularPrinter("Sleep", CurrentPID());
@@ -170,16 +205,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			}
 			//first PCB in Ready Queue starts
 			Dispatcher();
-			break;
-		case SYSNUM_CREATE_PROCESS:
-			newPCB = OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
-							SystemCallData->Argument[2], SystemCallData->Argument[3], 
-							SystemCallData->Argument[4]);
-			if (newPCB != NULL) {
-				SchedularPrinter("Create", newPCB->ProcessID);//print states
-				enPCBTable(newPCB);
-				enReadyQueue(newPCB);
-			}
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			termPID = (long)SystemCallData->Argument[0];
@@ -273,24 +298,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 			}
 			break;
-		case SYSNUM_GET_PROCESS_ID:
-			ProcessName = (char*)SystemCallData->Argument[0];
-			if (strcmp(ProcessName,"") == 0){
-				*SystemCallData->Argument[1] = currentPCB->ProcessID;
-				*SystemCallData->Argument[2] = ERR_SUCCESS;
-			}
-			else{
-				ReturnedPID = findPCBIDbyName(ProcessName);
-				if (ReturnedPID != -1){
-					*SystemCallData->Argument[1] = ReturnedPID;
-					*SystemCallData->Argument[2] = ERR_SUCCESS;
-				}
-				else{
-					*SystemCallData->Argument[1] = -1;
-					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
-				}
-			}
-			break;
 		case SYSNUM_CHANGE_PRIORITY:
 			changePrioPID = (int)SystemCallData->Argument[0];
 			changePrioPCB = findPCBbyProcessID((int)changePrioPID);
@@ -298,16 +305,21 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			if (newPriority<=40 && newPriority>=0) {
 				if (changePrioPCB != NULL) {
 					*SystemCallData->Argument[2] = ERR_SUCCESS;
-					changePrioPCB->Priority = newPriority;
 					//print states
+					printf("Before changing Priority\n");
 					SchedularPrinter("ChangePrio", changePrioPID);
 					
 					if (changePrioPCB->ProcessLocation == PCB_LOCATION_READY_QUEUE
 										&& newPriority != changePrioPCB->Priority) {
 						changePrioPCB = deCertainPCBFromReadyQueue(changePrioPID);
+						changePrioPCB->Priority = newPriority;
 						enReadyQueue(changePrioPCB);
 					}
+					else {
+						changePrioPCB->Priority = newPriority;
+					}
 					//print states
+					printf("After changing Priority\n");
 					SchedularPrinter("ChangePrio", changePrioPID);
 				}
 				else {
@@ -391,7 +403,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1h, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1a, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
