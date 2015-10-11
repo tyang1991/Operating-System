@@ -5,16 +5,6 @@
 #include "syscalls.h"
 
 /********************  Find  ***********************************************/
-int findPCBIDbyName(char* ProcessName){
-	if (findPCBbyProcessName(ProcessName) != NULL){
-		struct Process_Control_Block *PCB = findPCBbyProcessName(ProcessName);
-		return PCB->ProcessID;
-	}
-	else{
-		return -1;
-	}
-}
-
 struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 	//if PCB table is empty, return null PCB
 	if (pcbTable->Element_Number == 0){
@@ -108,78 +98,9 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 }
 /***************************************************************************/
 
-/**************************  Print  State  *********************************/
-void PrintPIDinReadyQueue(){
-	if (readyQueue->Element_Number == 0){
-		return;
-	}
-	else{
-		struct Ready_Queue_Element* checkingElement = readyQueue->First_Element;
-		printf("  ReadyQueue PID list: ");
-		for (int i = 0; i < readyQueue->Element_Number; i++){
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != readyQueue->Element_Number - 1){
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintPIDinTimerQueue() {
-	if (timerQueue->Element_Number == 0) {
-		return;
-	}
-	else {
-		struct Timer_Queue_Element* checkingElement = timerQueue->First_Element;
-		printf("  TimerQueue PID list: ");
-		for (int i = 0; i < timerQueue->Element_Number; i++) {
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != timerQueue->Element_Number - 1) {
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintCurrentPID(){
-	if (currentPCB == NULL){
-		printf("  No currentPCB\n");
-	}
-	else{
-		printf("  Current PID: %d\n", currentPCB->ProcessID);
-	}
-}
-
-void PrintPIDinPCBTable() {
-	if (pcbTable->Element_Number == 0) {
-		return;
-	}
-	else {
-		struct PCB_Table_Element* checkingElement = pcbTable->First_Element;
-		printf("PCBTable PID list: ");
-		for (int i = 0; i < pcbTable->Element_Number; i++) {
-			printf("%d ", checkingElement->PCB->ProcessID);
-			if (i != pcbTable->Element_Number - 1) {
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-		printf("\n");
-	}
-}
-
-void PrintCurrentState(){
-	PrintCurrentPID();
-	PrintPIDinReadyQueue();
-	PrintPIDinTimerQueue();
-}
-/***************************************************************************/
-
 /************************** Scheduler Printer*******************************/
 
-//define whether to print states. 1 to print; 0 not to print
-#define PRINTSTATES 0
+#define PRINTSTATES 1  //whether to print or not
 
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
@@ -194,7 +115,7 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 		SPData.NumberOfReadyProcesses = readyQueue->Element_Number;
 		if (readyQueue->Element_Number > 0) {
 			struct Ready_Queue_Element *checkingElement_ReadyQueue = readyQueue->First_Element;
-			for (int i = 0; i <= SPData.NumberOfReadyProcesses; i++) {
+			for (int i = 0; i < SPData.NumberOfReadyProcesses; i++) {
 				SPData.ReadyProcessPIDs[i] = checkingElement_ReadyQueue->PCB->ProcessID;
 				checkingElement_ReadyQueue = checkingElement_ReadyQueue->Next_Element;
 			}
@@ -204,9 +125,23 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 		SPData.NumberOfTimerSuspendedProcesses = timerQueue->Element_Number;
 		if (timerQueue->Element_Number > 0) {
 			struct Timer_Queue_Element *checkingElement_TimerQueue = timerQueue->First_Element;
-			for (int i = 0; i <= timerQueue->Element_Number; i++) {
+			for (int i = 0; i < timerQueue->Element_Number; i++) {
 				SPData.TimerSuspendedProcessPIDs[i] = checkingElement_TimerQueue->PCB->ProcessID;
 				checkingElement_TimerQueue = checkingElement_TimerQueue->Next_Element;
+			}
+		}
+
+		//PCB Suspended
+		SPData.NumberOfProcSuspendedProcesses = pcbTable->Suspended_Number;
+		if (pcbTable->Suspended_Number > 0) {
+			struct PCB_Table_Element *checkingElement_Suspend = pcbTable->First_Element;
+			int j = 0;
+			for (int i = 0; i < pcbTable->Element_Number; i++) {
+				if (checkingElement_Suspend->PCB->ProcessState == PCB_STATE_SUSPEND) {
+					SPData.ProcSuspendedProcessPIDs[j] = checkingElement_Suspend->PCB->ProcessID;
+					j++;
+				}
+				checkingElement_Suspend = checkingElement_Suspend->Next_Element;
 			}
 		}
 

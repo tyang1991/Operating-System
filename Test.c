@@ -230,7 +230,7 @@ void test1c(void) {
 	long ReturnedPID;           // Value of PID returned by System Call
 	long ErrorReturned;
 	long SleepTime = 1000;
-
+	int i = 0;
 	printf("This is Release %s:  Test 1c\n", CURRENT_REL);
 	CREATE_PROCESS("test1c_a", test1x, PRIORITY1C, &ProcessID1, &ErrorReturned);
 	SuccessExpected(ErrorReturned, "CREATE_PROCESS");
@@ -252,8 +252,9 @@ void test1c(void) {
 	while (ErrorReturned == ERR_SUCCESS) {
 		SLEEP(SleepTime);
 		GET_PROCESS_ID("test1c_e", &ReturnedPID, &ErrorReturned);
+		i++;
 	}
-
+	printf("i=%d\n", i);
 	TERMINATE_PROCESS(-2, &ErrorReturned); /* Terminate all */
 
 }                                                     // End test1c
