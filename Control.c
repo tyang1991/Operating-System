@@ -155,6 +155,10 @@ void Dispatcher(){
 		else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
 			deReadyQueue();
 		}
+		else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
+			PCB = deReadyQueue();
+			break;
+		}
 	}
 
 	OSStartProcess(PCB);

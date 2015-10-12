@@ -164,6 +164,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	long *ActualSendLength;
 	long *ActualSourcePID;
 	long *ErrorReturned_ReceiveMessage;
+	struct Process_Control_Block *Mess_PCB;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -365,6 +366,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			MessageCreated = CreateMessage(TargetPID, MessageBuffer, 
 				                        SendLength, ErrorReturned_SendMessage);
 			if (MessageCreated != NULL) {
+				SchedularPrinter("SendMsg", CurrentPID());
 				enMessageTable(MessageCreated);
 			}
 			break;
@@ -375,6 +377,9 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			ActualSendLength = SystemCallData->Argument[3];
 			ActualSourcePID = SystemCallData->Argument[4];
 			ErrorReturned_ReceiveMessage = SystemCallData->Argument[5];
+			Mess_PCB = CurrentPCB();
+			Mess_PCB->ProcessState = PCB_STATE_MSG_SUSPEND;
+			pcbTable->Msg_Suspended_Number += 1;
 
 			while (findMessage(SourcePID, ReceiveBuffer, ReceiveLength,
 				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage) == 0) {
@@ -388,6 +393,10 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				Dispatcher();
 			}
 
+			Mess_PCB->ProcessState = PCB_STATE_LIVE;
+			pcbTable->Msg_Suspended_Number -= 1;
+			SchedularPrinter("ReceiveMsg", CurrentPID());
+			printf("########################Msg_Suspend_No: %d\n", pcbTable->Msg_Suspended_Number);
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");

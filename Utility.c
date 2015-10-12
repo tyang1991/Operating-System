@@ -104,7 +104,7 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 
 /************************** Scheduler Printer*******************************/
 
-#define PRINTSTATES 1  //whether to print or not
+#define PRINTSTATES 0  //whether to print or not
 
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
@@ -146,6 +146,20 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 					j++;
 				}
 				checkingElement_Suspend = checkingElement_Suspend->Next_Element;
+			}
+		}
+
+		//PCB Message Suspended
+		SPData.NumberOfMessageSuspendedProcesses = pcbTable->Msg_Suspended_Number;
+		if (pcbTable->Msg_Suspended_Number > 0) {
+			struct PCB_Table_Element *checkingElement_Mess_Suspend = pcbTable->First_Element;
+			int m = 0;
+			for (int i = 0; i < pcbTable->Msg_Suspended_Number; i++) {
+				if (checkingElement_Mess_Suspend->PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
+					SPData.MessageSuspendedProcessPIDs[m] = checkingElement_Mess_Suspend->PCB->ProcessID;
+					m++;
+				}
+				checkingElement_Mess_Suspend = checkingElement_Mess_Suspend->Next_Element;
 			}
 		}
 

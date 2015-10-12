@@ -23,6 +23,7 @@ void initPCBTable(){
 	pcbTable->Element_Number = 0;
 	pcbTable->Suspended_Number = 0;
 	pcbTable->Terminated_Number = 0;
+	pcbTable->Msg_Suspended_Number = 0;
 }
 
 void enPCBTable(struct Process_Control_Block *PCB){
@@ -45,7 +46,8 @@ void enPCBTable(struct Process_Control_Block *PCB){
 }
 
 int PCBLiveNumber() {
-	return pcbTable->Element_Number - pcbTable->Suspended_Number - pcbTable->Terminated_Number;
+	return pcbTable->Element_Number - pcbTable->Suspended_Number
+		- pcbTable->Terminated_Number - pcbTable->Msg_Suspended_Number;
 }
 
 void lockPCBTable() {

@@ -811,6 +811,8 @@ void test1j(void) {
 	CHANGE_PRIORITY(-1, MOST_FAVORABLE_PRIORITY, &ErrorReturned);
 	SuccessExpected(ErrorReturned, "CHANGE_PRIORITY");
 
+	printf("##########################\n");
+
 	// Make 3 legal targets
 	CREATE_PROCESS("test1j_1", test1j_echo, NORMAL_PRIORITY, &ProcessID1,
 			&ErrorReturned);
@@ -860,6 +862,7 @@ void test1j(void) {
 
 	//      Keep sending legal messages until the architectural (OS)
 	//      limit for buffer space is exhausted.
+	printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
 	ErrorReturned = ERR_SUCCESS;
 	while (ErrorReturned == ERR_SUCCESS) {
@@ -893,6 +896,7 @@ void test1j(void) {
                                 td->MessageBuffer);
 		td->receive_loop_count++;
 	}
+	printf("$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 
 	printf("A total of %ld messages were received.\n", td->receive_loop_count);
 	CALL(TERMINATE_PROCESS(-2, &ErrorReturned ));
