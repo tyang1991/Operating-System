@@ -98,6 +98,11 @@ void FaultHandler(void) {
 
 	printf("Fault_handler: Found vector type %d with value %d\n", DeviceID,
 			Status);
+	/*****************************My Code******************************/
+	
+	HaltProcess();
+	
+	/******************************************************************/
 
 	// Clear out this device - we're done with it
 	mmio.Mode = Z502ClearInterruptStatus;
@@ -458,7 +463,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1j, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1k, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
