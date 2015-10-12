@@ -421,10 +421,8 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 					if (checkingElement->Message->Target_PID == -1) {//if broadcast
 						*ActualSourcePID = checkingElement->Message->Sender_PID;
 					}
-					ReceiveBuffer = (char*)calloc(sizeof(char), checkingElement->Message->Message_Length);
 					*ActualSendLength = checkingElement->Message->Message_Length;
 					strcpy(ReceiveBuffer, checkingElement->Message->Message_Buffer);
-					//ReceiveBuffer = checkingElement->Message->Message_Buffer;
 					RemoveMessage(checkingElement);
 				}
 				else {
@@ -450,9 +448,7 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 					*ErrorReturned_ReceiveMessage = ERR_SUCCESS;
 					*ActualSourcePID = checkingElement->Message->Sender_PID;
 					*ActualSendLength = checkingElement->Message->Message_Length;
-					ReceiveBuffer = (char*)calloc(sizeof(char), checkingElement->Message->Message_Length);
 					strcpy(ReceiveBuffer, checkingElement->Message->Message_Buffer);
-					//ReceiveBuffer = checkingElement->Message->Message_Buffer;
 					RemoveMessage(checkingElement);
 				}
 				else {
