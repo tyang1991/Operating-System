@@ -305,28 +305,38 @@ void initMessageTable() {
 }
 
 #define         MAX_MESSAGE_LENGTH           (INT16)64
+#define         MAX_MASSAGE_NUMBER           (INT16)10
 
-struct Message *CreateMessage(long Target_PID, long Sender_PID, char *Message_Buffer, long SendLength, long *ErrorReturned) {
+struct Message *CreateMessage(long Target_PID, char *Message_Buffer, long SendLength, long *ErrorReturned) {
 	//check input
 	if (Target_PID < -1 || Target_PID > pcbTable->Element_Number - 1) {
 		*ErrorReturned = ERR_BAD_PARAM;
+		return NULL;
 	}
 	else if (SendLength < 0 || SendLength > MAX_MESSAGE_LENGTH) {
 		*ErrorReturned = ERR_BAD_PARAM;
+		return NULL;
+	}
+	else if (messageTable->Element_Number >= MAX_MASSAGE_NUMBER) {
+		*ErrorReturned = ERR_BAD_PARAM;
+		return NULL;
 	}
 	else {
 		*ErrorReturned = ERR_SUCCESS;
+
+		struct Process_Control_Block *SenderPCB = CurrentPCB();
+		long SenderPID = SenderPCB->ProcessID;
+
+		struct Message *newMessage = (struct Message*)malloc(sizeof(struct Message));
+		newMessage->Target_PID = Target_PID;
+		newMessage->Sender_PID = SenderPID;
+		char *newMessageBuffer = (char*)calloc(sizeof(char), MAX_MESSAGE_LENGTH);
+		strcpy(newMessageBuffer, Message_Buffer);
+		newMessage->Message_Buffer = newMessageBuffer;
+		newMessage->Message_Length = SendLength;
+
+		return newMessage;
 	}
-
-	struct Message *newMessage = (struct Message*)malloc(sizeof(struct Message));
-	newMessage->Target_PID = Target_PID;
-	newMessage->Sender_PID = Sender_PID;
-	char *newMessageBuffer = (char*)calloc(sizeof(char), MAX_MESSAGE_LENGTH);
-	strcpy(newMessageBuffer, Message_Buffer);
-	newMessage->Message_Buffer = newMessageBuffer;
-	newMessage->Message_Length = SendLength;
-
-	return newMessage;
 }
 
 void enMessageTable(struct Message *Message) {
@@ -334,14 +344,114 @@ void enMessageTable(struct Message *Message) {
 
 	struct Message_Table_Element *newElement = (struct Message_Table_Element*)malloc(sizeof(struct Message_Table_Element));
 	newElement->Message = Message;
+
 	if (messageTable->Element_Number == 0) {
+		newElement->Prev_Element = newElement;
+		newElement->Next_Element = newElement;
 		messageTable->First_Element = newElement;
 	}
 	else {
+		//always put new message at the end of message table
+		newElement->Prev_Element = messageTable->First_Element->Prev_Element;
 		newElement->Next_Element = messageTable->First_Element;
-		messageTable->First_Element = newElement;
+		messageTable->First_Element->Prev_Element->Next_Element = newElement;
+		messageTable->First_Element->Prev_Element = newElement;
 	}
 	messageTable->Element_Number += 1;
+
+	unlockMessageTable();
+}
+
+void RemoveMessage(struct Message_Table_Element *MessageToRemove) {
+	lockMessageTable();
+
+	if (MessageToRemove == NULL || messageTable->Element_Number == 0) {
+		printf("Unable to remove Message\n");
+	}
+	else {
+		MessageToRemove->Prev_Element->Next_Element = MessageToRemove->Next_Element;
+		MessageToRemove->Next_Element->Prev_Element = MessageToRemove->Prev_Element;
+		if (MessageToRemove == messageTable->First_Element) {
+			messageTable->First_Element = MessageToRemove->Next_Element;
+		}
+		messageTable->Element_Number -= 1;
+	}
+
+	unlockMessageTable();
+}
+
+void findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength, 
+	long *ActualSendLength, long *ActualSourcePID, long *ErrorReturned_ReceiveMessage) {
+
+	lockMessageTable();
+	//check input
+	if (messageTable->Element_Number == 0) {
+		*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+	}
+	else if (Source_PID < -1 || Source_PID > pcbTable->Element_Number - 1) {
+		*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+	}
+	else if (ReceiveLength > MAX_MESSAGE_LENGTH) {
+		*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+	}
+
+	struct Process_Control_Block *receiverPCB = CurrentPCB();
+	long receiverPID = receiverPCB->ProcessID;
+
+	struct Message_Table_Element *checkingElement = messageTable->First_Element;
+
+	for (int i = 0; i < messageTable->Element_Number; i++) {
+		if (Source_PID != -1) {
+			if ( (checkingElement->Message->Target_PID == receiverPID || checkingElement->Message->Target_PID == -1)
+				&& checkingElement->Message->Sender_PID == Source_PID){
+				if (ReceiveLength >= checkingElement->Message->Message_Length) {
+
+					*ErrorReturned_ReceiveMessage = ERR_SUCCESS;
+					if (checkingElement->Message->Target_PID == -1) {//if broadcast
+						*ActualSourcePID = checkingElement->Message->Sender_PID;
+					}
+					ReceiveBuffer = checkingElement->Message->Message_Buffer;
+					RemoveMessage(checkingElement);
+				}
+				else {
+					*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+					*ActualSendLength = checkingElement->Message->Message_Length;
+				}
+				break;
+			}
+			else {
+				if (i != messageTable->Element_Number - 1) {
+					checkingElement = checkingElement->Next_Element;
+				}
+				else {
+					*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+				}
+			}
+		}
+		else {
+			if (checkingElement->Message->Target_PID == receiverPID || checkingElement->Message->Target_PID == -1) {
+				if (ReceiveLength >= checkingElement->Message->Message_Length) {
+					*ErrorReturned_ReceiveMessage = ERR_SUCCESS;
+					*ActualSourcePID = checkingElement->Message->Sender_PID;
+					ReceiveBuffer = checkingElement->Message->Message_Buffer;
+					RemoveMessage(checkingElement);
+				}
+				else {
+					*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+					*ActualSendLength = checkingElement->Message->Message_Length;
+				}
+				break;
+			}
+			else {
+				if (i != messageTable->Element_Number - 1) {
+					checkingElement = checkingElement->Next_Element;
+				}
+				else {
+					*ErrorReturned_ReceiveMessage = ERR_BAD_PARAM;
+				}
+			}
+		}
+	}
 
 	unlockMessageTable();
 }

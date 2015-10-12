@@ -148,11 +148,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	int newPriority;
 	//for SEND_MESSAGE
 	long TargetPID;
-	struct Process_Control_Block *SenderPCB;
-	long SenderPID;
 	char *MessageBuffer;
 	long SendLength;
 	struct Message *MessageCreated;
+	long *ErrorReturned_SendMessage;
+	//for RECEIVE_MESSAGE
+	long SourcePID;
+	char *ReceiveBuffer;
+	long ReceiveLength;
+	long *ActualSendLength;
+	long *ActualSourcePID;
+	long *ErrorReturned_ReceiveMessage;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -349,12 +355,24 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			TargetPID = (long)SystemCallData->Argument[0];
 			MessageBuffer = (char*)SystemCallData->Argument[1];
 			SendLength = (long)SystemCallData->Argument[2];
-			SenderPCB = CurrentPCB();
-			SenderPID = SenderPCB->ProcessID;
+			ErrorReturned_SendMessage = SystemCallData->Argument[3];
 
-			MessageCreated = CreateMessage(TargetPID, SenderPID, MessageBuffer, 
-				                      SendLength, SystemCallData->Argument[3]);
-			enMessageTable(MessageCreated);
+			MessageCreated = CreateMessage(TargetPID, MessageBuffer, 
+				                        SendLength, ErrorReturned_SendMessage);
+			if (MessageCreated != NULL) {
+				enMessageTable(MessageCreated);
+			}
+			break;
+		case SYSNUM_RECEIVE_MESSAGE:
+			SourcePID = (long)SystemCallData->Argument[0];
+			ReceiveBuffer = (char*)SystemCallData->Argument[1];
+			ReceiveLength = (long)SystemCallData->Argument[2];
+			ActualSendLength = SystemCallData->Argument[3];
+			ActualSourcePID = SystemCallData->Argument[4];
+			ErrorReturned_ReceiveMessage = SystemCallData->Argument[5];
+
+			findMessage(SourcePID, ReceiveBuffer, ReceiveLength, 
+				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage);
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -430,7 +448,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1c, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1i, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

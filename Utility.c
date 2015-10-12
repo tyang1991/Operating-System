@@ -100,7 +100,7 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 
 /************************** Scheduler Printer*******************************/
 
-#define PRINTSTATES 1  //whether to print or not
+#define PRINTSTATES 0  //whether to print or not
 
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
