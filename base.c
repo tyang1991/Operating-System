@@ -371,8 +371,18 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			ActualSourcePID = SystemCallData->Argument[4];
 			ErrorReturned_ReceiveMessage = SystemCallData->Argument[5];
 
-			findMessage(SourcePID, ReceiveBuffer, ReceiveLength, 
-				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage);
+			while (findMessage(SourcePID, ReceiveBuffer, ReceiveLength,
+				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage) == 0) {
+				currentPCB->WakeUpTime = CurrentTime() + 10;
+				//Put current running PCB into timer queue and reset time 
+				enTimerQueue(currentPCB);
+				if (currentPCB == timerQueue->First_Element->PCB) {
+					SetTimer(10);
+				}
+				//first PCB in Ready Queue starts
+				Dispatcher();
+			}
+
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -448,7 +458,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1i, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1j, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

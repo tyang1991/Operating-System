@@ -101,7 +101,7 @@ void initMessageTable();
 struct Message *CreateMessage(long Target_PID, char *Message_Buffer, long SendLength, long *ErrorReturned);
 void enMessageTable(struct Message *Message);
 void RemoveMessage(struct Message_Table_Element *MessageToRemove);
-void findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
+int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 	long *ActualSendLength, long *ActualSourcePID, long *ErrorReturned_ReceiveMessage);
 void lockMessageTable();
 void unlockMessageTable();

@@ -46,6 +46,10 @@ struct Process_Control_Block *findPCBbyProcessID(int ProcessID){
 		return NULL;
 	}
 
+	if (ProcessID == -1) {
+		ProcessID = CurrentPID();
+	}
+
 	//create a temp pointer to check elements
 	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
 
@@ -100,7 +104,7 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 
 /************************** Scheduler Printer*******************************/
 
-#define PRINTSTATES 0  //whether to print or not
+#define PRINTSTATES 1  //whether to print or not
 
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
