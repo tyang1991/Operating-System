@@ -245,7 +245,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					TerminateProcess(CurrentPCB());
 				}
 				else {
-					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					HaltProcess();
 				}
 			}
 			if (termPID == -2){
@@ -396,7 +397,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Mess_PCB->ProcessState = PCB_STATE_LIVE;
 			pcbTable->Msg_Suspended_Number -= 1;
 			SchedularPrinter("ReceiveMsg", CurrentPID());
-			printf("########################Msg_Suspend_No: %d\n", pcbTable->Msg_Suspended_Number);
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
@@ -472,7 +472,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1j, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1a, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
