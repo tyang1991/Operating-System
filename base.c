@@ -238,8 +238,13 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			}
 			unlockTimer();
 
-			//first PCB in Ready Queue starts
-			Dispatcher();
+			if (ProcessorMode == Uniprocessor) {
+				//first PCB in Ready Queue starts
+				Dispatcher();
+			}
+			else {
+				OSSuspendCurrentProcess();
+			}
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			termPID = (long)SystemCallData->Argument[0];
@@ -477,6 +482,4 @@ void osInit(int argc, char *argv[]) {
 		enReadyQueue(newPCB);
 	}
 	Dispatcher();
-
-	while (1);
 }                                               // End of osInit
