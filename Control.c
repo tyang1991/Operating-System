@@ -75,7 +75,7 @@ void Dispatcher(){
 					break;
 				}
 			}
-
+			
 			OSStartProcess(PCB);
 			break;
 		case Multiprocessor:
@@ -155,18 +155,25 @@ void Dispatcher(){
 }
 
 void OSStartProcess_Only(struct Process_Control_Block* PCB) {
-	MEMORY_MAPPED_IO mmio;
-	pcbTable->Cur_Running_Number += 1;
+	if (PCB->ProcessState != PCB_STATE_RUNNING) {
+		MEMORY_MAPPED_IO mmio;
+		pcbTable->Cur_Running_Number += 1;
+		printf("+++++++++++++++++++++++++++++++1, PID: %d\n", PCB->ProcessID);
+		PCB->ProcessState = PCB_STATE_RUNNING;
 
-	mmio.Mode = Z502StartContext;
-	mmio.Field1 = PCB->ContextID;
-	mmio.Field2 = START_NEW_CONTEXT_ONLY;
-	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+		mmio.Mode = Z502StartContext;
+		mmio.Field1 = PCB->ContextID;
+		mmio.Field2 = START_NEW_CONTEXT_ONLY;
+		MEM_WRITE(Z502Context, &mmio);     // Start up the context
+	}
 }
 
 void OSSuspendCurrentProcess() {
 	MEMORY_MAPPED_IO mmio;
 	pcbTable->Cur_Running_Number -= 1;
+	struct Process_Control_Block* PCB = CurrentPCB();
+	printf("-----------------------------------1, PID: %d\n", PCB->ProcessID);
+	PCB->ProcessState = PCB_STATE_LIVE;
 
 	mmio.Mode = Z502StartContext;
 	mmio.Field1 = 0;

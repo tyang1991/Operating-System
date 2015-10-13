@@ -163,6 +163,20 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 			}
 		}
 
+		//PCB Running
+		SPData.NumberOfRunningProcesses = pcbTable->Cur_Running_Number;
+		if (pcbTable->Cur_Running_Number > 0) {
+			struct PCB_Table_Element *checkingElement_RunningPCB = pcbTable->First_Element;
+			int n = 0;
+			for (int i = 0; i < pcbTable->Cur_Running_Number; i++) {
+				if (checkingElement_RunningPCB->PCB->ProcessState == PCB_STATE_RUNNING) {
+					SPData.RunningProcessPIDs[n] = checkingElement_RunningPCB->PCB->ProcessID;
+					n++;
+				}
+				checkingElement_RunningPCB = checkingElement_RunningPCB->Next_Element;
+			}
+		}
+
 		CALL(SPPrintLine(&SPData));
 	}
 }
