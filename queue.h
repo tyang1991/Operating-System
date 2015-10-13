@@ -1,5 +1,18 @@
 #include             "global.h"
 
+#define                  DO_LOCK                     1
+#define                  DO_UNLOCK                   0
+#define                  SUSPEND_UNTIL_LOCKED        TRUE
+#define                  DO_NOT_SUSPEND              FALSE
+INT32 LockResult;
+//char mySuccess[] = "      Action Failed\0        Action Succeeded";
+#define          mySPART          22
+#define      MEMORY_INTERLOCK_PCB_Table       MEMORY_INTERLOCK_BASE+1
+#define      MEMORY_INTERLOCK_READY_QUEUE     MEMORY_INTERLOCK_PCB_Table+1
+#define      MEMORY_INTERLOCK_TIMER_QUEUE     MEMORY_INTERLOCK_READY_QUEUE+1
+#define      MEMORY_INTERLOCK_MESSAGE_TABLE   MEMORY_INTERLOCK_TIMER_QUEUE+1
+#define      MEMORY_INTERLOCK_TIMER           MEMORY_INTERLOCK_MESSAGE_TABLE+1
+
 #define PCB_STATE_LIVE 0L
 #define PCB_STATE_SUSPEND 1L
 #define PCB_STATE_MSG_SUSPEND 2L
@@ -9,7 +22,6 @@
 #define PCB_LOCATION_TIMER_QUEUE 2L
 
 struct Timer_Queue *timerQueue;
-struct Process_Control_Block *currentPCB;
 struct PCB_Table *pcbTable;
 struct Ready_Queue *readyQueue;
 struct Message_Table *messageTable;
@@ -33,6 +45,7 @@ struct PCB_Table {
 	int Terminated_Number;
 	int Suspended_Number;
 	int Msg_Suspended_Number;
+	int Cur_Running_Number;
 	struct PCB_Table_Element *First_Element;
 };
 

@@ -132,6 +132,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	INT32 Temp_Clock;
 	//for SLEEP
 	long Sleep_Time;
+	struct Process_Control_Block *sleepPCB;
 	//for CREATE_PROCESS
 	struct Process_Control_Block *newPCB;
 	//for TERMINATE_PROCESS
@@ -199,7 +200,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		case SYSNUM_GET_PROCESS_ID:
 			ProcessName = (char*)SystemCallData->Argument[0];
 			if (strcmp(ProcessName, "") == 0) {
-				*SystemCallData->Argument[1] = currentPCB->ProcessID;
+				PCBbyProcessName = CurrentPCB();
+				*SystemCallData->Argument[1] = PCBbyProcessName->ProcessID;
 				*SystemCallData->Argument[2] = ERR_SUCCESS;
 			}
 			else {
@@ -225,12 +227,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			SchedularPrinter("Sleep", CurrentPID());
 			//Calculate WakeUpTime for PCB
 			Sleep_Time = (long)SystemCallData->Argument[0];
-			currentPCB->WakeUpTime = CurrentTime() + Sleep_Time;
+			sleepPCB = CurrentPCB();
+			sleepPCB->WakeUpTime = CurrentTime() + Sleep_Time;
 			//Put current running PCB into timer queue and reset time 
-			enTimerQueue(currentPCB);
-			if (currentPCB == timerQueue->First_Element->PCB){
+
+			lockTimer();
+			enTimerQueue(sleepPCB);
+			if (sleepPCB == timerQueue->First_Element->PCB){
 				SetTimer(Sleep_Time);
 			}
+			unlockTimer();
+
 			//first PCB in Ready Queue starts
 			Dispatcher();
 			break;
@@ -310,13 +317,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					SchedularPrinter("Resume", resumePID);
 					//Resume specified process
 					ResumeProcess(resumePCB);
-					/*
-					resumePCB->ProcessState = PCB_STATE_LIVE;
-
-					if (resumePCB->ProcessLocation == PCB_LOCATION_FLOATING) {
-						enReadyQueue(resumePCB);
-					}*/
-
 				}
 				else {
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
@@ -384,10 +384,10 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 
 			while (findMessage(SourcePID, ReceiveBuffer, ReceiveLength,
 				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage) == 0) {
-				currentPCB->WakeUpTime = CurrentTime() + 10;
+				Mess_PCB->WakeUpTime = CurrentTime() + 10;
 				//Put current running PCB into timer queue and reset time 
-				enTimerQueue(currentPCB);
-				if (currentPCB == timerQueue->First_Element->PCB) {
+				enTimerQueue(Mess_PCB);
+				if (Mess_PCB == timerQueue->First_Element->PCB) {
 					SetTimer(10);
 				}
 				//first PCB in Ready Queue starts
@@ -417,7 +417,6 @@ void osInit(int argc, char *argv[]) {
 	MEMORY_MAPPED_IO mmio;
 
 	//init Queues
-	struct Process_Control_Block* currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	initPCBTable();
 	initTimerQueue();
 	initReadyQueue();
@@ -472,10 +471,12 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1a, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1c, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);
 	}
 	Dispatcher();
+
+	while (1);
 }                                               // End of osInit

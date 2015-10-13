@@ -5,6 +5,7 @@
 #include "Control.h"
 #include "Utility.h"
 
+/*******************************Current State*********************************/
 long CurrentTime(){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
@@ -39,48 +40,144 @@ int CurrentPID() {
 		return -1;
 	}
 }
+/*****************************************************************************/
 
-void SetTimer(long SleepTime){
-	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
-	if (SleepTime > 0){
-		mmio.Mode = Z502Start;
-		mmio.Field1 = SleepTime;   // You pick the time units
-		mmio.Field2 = mmio.Field3 = 0;
-		MEM_WRITE(Z502Timer, &mmio);
-	}
-	else{
-//		printf("ERROR: Time reset NEGATIVE!!!");
+/******************************Process Controle*******************************/
+#define Uniprocessor 1L
+#define Multiprocessor 2L
+#define ProcessorMode Multiprocessor
+
+void Dispatcher(){
+	struct Process_Control_Block *PCB;//for temp use
+	
+	switch (ProcessorMode) {
+		case Uniprocessor:
+			while (1) {
+				while (readyQueue->Element_Number == 0) {
+					CALL(1);
+				}
+
+				PCB = readyQueue->First_Element->PCB;
+
+				if (PCB->ProcessState == PCB_STATE_LIVE) {
+					PCB = deReadyQueue();
+					break;
+				}
+				else if (PCB->ProcessState == PCB_STATE_TERMINATE) {
+					deReadyQueue();
+				}
+				else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
+					deReadyQueue();
+				}
+				else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
+					PCB = deReadyQueue();
+					break;
+				}
+			}
+
+			OSStartProcess(PCB);
+			break;
+		case Multiprocessor:
+			//if multiple processes running at the same time, we only start new process
+			//when ready queue is not empty
+			if (pcbTable->Cur_Running_Number > 1) {
+				if (readyQueue->Element_Number >= 1) {
+					do {
+						PCB = readyQueue->First_Element->PCB;
+
+						if (PCB->ProcessState == PCB_STATE_LIVE) {
+							PCB = deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_TERMINATE) {
+							deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
+							deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
+							PCB = deReadyQueue();
+						}
+
+						if (PCB != NULL) {
+							OSStartProcess_Only(PCB);
+						}
+
+					} while (readyQueue->Element_Number >= 1);
+				}
+
+				//suspend itself
+				PCB = CurrentPCB();
+				OSSuspendCurrentProcess();
+			}
+			//if only one process running, it's responsible to start another process
+			else {
+				while (1) {
+					while (readyQueue->Element_Number == 0) {
+						CALL(1);
+					}
+
+					PCB = readyQueue->First_Element->PCB;
+
+					do {
+						if (PCB->ProcessState == PCB_STATE_LIVE) {
+							PCB = deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_TERMINATE) {
+							deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
+							deReadyQueue();
+						}
+						else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
+							PCB = deReadyQueue();
+						}
+
+						if (PCB != NULL) {
+							OSStartProcess_Only(PCB);
+						}
+
+					} while (readyQueue->Element_Number >= 1);
+					//if other processes are started, break and suspend itself
+					if (pcbTable->Cur_Running_Number > 1) {
+						break;
+					}
+				}
+
+				//suspend itself
+				PCB = CurrentPCB();
+				if (PCB != NULL) {
+					OSSuspendCurrentProcess();
+				}
+			}
+			break;
 	}
 }
 
-int ResetTimer(){
-	MEMORY_MAPPED_IO mmio;    //for hardware interface
-	int SleepTime;
+void OSStartProcess_Only(struct Process_Control_Block* PCB) {
+	MEMORY_MAPPED_IO mmio;
+	pcbTable->Cur_Running_Number += 1;
 
-	if (timerQueue->Element_Number > 0){
-		SleepTime = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();
+	mmio.Mode = Z502StartContext;
+	mmio.Field1 = PCB->ContextID;
+	mmio.Field2 = START_NEW_CONTEXT_ONLY;
+	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+}
 
-		if (SleepTime > 0){
-			mmio.Mode = Z502Start;
-			mmio.Field1 = SleepTime;   // You pick the time units
-			mmio.Field2 = mmio.Field3 = 0;
-			MEM_WRITE(Z502Timer, &mmio);
+void OSSuspendCurrentProcess() {
+	MEMORY_MAPPED_IO mmio;
+	pcbTable->Cur_Running_Number -= 1;
 
-			return 1;
-		}
-		else{
-			return 0;
-		}
-	}
-	else{
-		return -1;
-	}
+	mmio.Mode = Z502StartContext;
+	mmio.Field1 = 0;
+	mmio.Field2 = SUSPEND_CURRENT_CONTEXT_ONLY;
+	MEM_WRITE(Z502Context, &mmio);     // Start up the context
 }
 
 #define MAX_PCB_NUMBER 10
 
-struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, long *Priority, long *ProcessID, long *ErrorReturned){
+struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, 
+							long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input
 	if ((int)Priority < 0){
 		*ErrorReturned = ERR_BAD_PARAM;
@@ -127,41 +224,10 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 void OSStartProcess(struct Process_Control_Block* PCB){
 	MEMORY_MAPPED_IO mmio;
 
-	currentPCB = PCB;//set current PCB
-
 	mmio.Mode = Z502StartContext;
 	mmio.Field1 = PCB->ContextID;
 	mmio.Field2 = START_NEW_CONTEXT_AND_SUSPEND;
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
-}
-
-void Dispatcher(){
-	struct Process_Control_Block *PCB;//for temp use
-
-	while (1){
-		while (readyQueue->Element_Number == 0){
-			CALL(1);
-		}
-
-		PCB = readyQueue->First_Element->PCB;
-
-		if (PCB->ProcessState == PCB_STATE_LIVE){
-			PCB = deReadyQueue();
-			break;
-		}
-		else if (PCB->ProcessState == PCB_STATE_TERMINATE){
-			deReadyQueue();
-		}
-		else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
-			deReadyQueue();
-		}
-		else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
-			PCB = deReadyQueue();
-			break;
-		}
-	}
-
-	OSStartProcess(PCB);
 }
 
 void IdleProcess(){
@@ -222,3 +288,55 @@ void ResumeProcess(struct Process_Control_Block *PCB) {
 		}
 	}
 }
+/*****************************************************************************/
+
+
+/******************************Timer Control**********************************/
+void SetTimer(long SleepTime){
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+
+	if (SleepTime > 0){
+		mmio.Mode = Z502Start;
+		mmio.Field1 = SleepTime;   // You pick the time units
+		mmio.Field2 = mmio.Field3 = 0;
+		MEM_WRITE(Z502Timer, &mmio);
+	}
+	else{
+//		printf("ERROR: Time reset NEGATIVE!!!");
+	}
+}
+
+int ResetTimer(){
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	int SleepTime;
+
+	if (timerQueue->Element_Number > 0){
+		SleepTime = timerQueue->First_Element->PCB->WakeUpTime - CurrentTime();
+
+		if (SleepTime > 0){
+			mmio.Mode = Z502Start;
+			mmio.Field1 = SleepTime;   // You pick the time units
+			mmio.Field2 = mmio.Field3 = 0;
+			MEM_WRITE(Z502Timer, &mmio);
+
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
+	else{
+		return -1;
+	}
+}
+
+void lockTimer() {
+	READ_MODIFY(MEMORY_INTERLOCK_TIMER, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+}
+
+void unlockTimer() {
+	READ_MODIFY(MEMORY_INTERLOCK_TIMER, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+}
+/*****************************************************************************/

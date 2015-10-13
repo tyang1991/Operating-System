@@ -5,18 +5,6 @@
 #include "syscalls.h"
 #include "global.h"
 #include "Utility.h"
-
-#define                  DO_LOCK                     1
-#define                  DO_UNLOCK                   0
-#define                  SUSPEND_UNTIL_LOCKED        TRUE
-#define                  DO_NOT_SUSPEND              FALSE
-INT32 LockResult;
-char mySuccess[] = "      Action Failed\0        Action Succeeded";
-#define          mySPART          22
-#define      MEMORY_INTERLOCK_PCB_Table       MEMORY_INTERLOCK_BASE+1
-#define      MEMORY_INTERLOCK_READY_QUEUE     MEMORY_INTERLOCK_PCB_Table+1
-#define      MEMORY_INTERLOCK_TIMER_QUEUE     MEMORY_INTERLOCK_READY_QUEUE+1
-#define      MEMORY_INTERLOCK_MESSAGE_TABLE   MEMORY_INTERLOCK_TIMER_QUEUE+1
 /*********************PCB Table************************/
 void initPCBTable(){
 	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
@@ -24,6 +12,7 @@ void initPCBTable(){
 	pcbTable->Suspended_Number = 0;
 	pcbTable->Terminated_Number = 0;
 	pcbTable->Msg_Suspended_Number = 0;
+	pcbTable->Cur_Running_Number = 0;
 }
 
 void enPCBTable(struct Process_Control_Block *PCB){
@@ -53,13 +42,11 @@ int PCBLiveNumber() {
 void lockPCBTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 void unlockPCBTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 /*******************************************************/
@@ -154,13 +141,11 @@ struct Process_Control_Block *deTimerQueue(){
 void lockTimerQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_TIMER_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 void unlockTimerQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_TIMER_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 /*******************************************************/
 
@@ -290,13 +275,11 @@ struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
 void lockReadyQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 void unlockReadyQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 /*******************************************************/
 
@@ -479,11 +462,9 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 void lockMessageTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }
 
 void unlockMessageTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
-	//	printf("%s\n", &(mySuccess[mySPART * LockResult]));
 }

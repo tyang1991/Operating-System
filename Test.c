@@ -254,7 +254,6 @@ void test1c(void) {
 		GET_PROCESS_ID("test1c_e", &ReturnedPID, &ErrorReturned);
 		i++;
 	}
-	printf("i=%d\n", i);
 	TERMINATE_PROCESS(-2, &ErrorReturned); /* Terminate all */
 
 }                                                     // End test1c
@@ -977,8 +976,6 @@ void test1x(void) {
 
 	TERMINATE_PROCESS(-1, &ErrorReturned);
 	printf("ERROR: Test1x should be terminated but isn't.\n");
-	printf("PID: %d\n", currentPCB->ProcessID);
-
 }                                                  // End of test1x 
 
 /**************************************************************************
