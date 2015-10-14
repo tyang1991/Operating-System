@@ -304,8 +304,6 @@ void TerminateProcess(struct Process_Control_Block *PCB) {
 				else {
 					OSSuspendCurrentProcess();
 				}
-
-//				Dispatcher();
 			}
 		}
 		else {

@@ -103,7 +103,7 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 /***************************************************************************/
 
 /*************************** Scheduler Printer******************************/
-#define PRINTSTATES 0  //1 to print states; 0 to hide states
+#define PRINTSTATES 1  //1 to print states; 0 to hide states
 void lockSP() {
 	READ_MODIFY(MEMORY_INTERLOCK_PRINTER, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -116,6 +116,9 @@ void unlockSP() {
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
 		lockSP();
+		lockPCBTable();
+		lockTimerQueue();
+		lockReadyQueue();
 		SP_INPUT_DATA SPData;    // Used to feed SchedulerPrinter
 		memset(&SPData, 0, sizeof(SP_INPUT_DATA));
 		strcpy(SPData.TargetAction, TargetAction);
@@ -186,15 +189,10 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 		}
 
 		CALL(SPPrintLine(&SPData));
-
-		struct PCB_Table_Element *checkingElement_State = pcbTable->First_Element;
-		printf("PCB__State in PCB Table: ");
-		for (int i = 0; i < pcbTable->Element_Number; i++) {
-			printf("PID%d: %d ", checkingElement_State->PCB->ProcessID, checkingElement_State->PCB->ProcessState);
-			checkingElement_State = checkingElement_State->Next_Element;
-		}
-		printf("\n\n");
 		unlockSP();
+		unlockPCBTable();
+		unlockTimerQueue();
+		unlockReadyQueue();
 	}
 }
 /***************************************************************************/
