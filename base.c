@@ -267,6 +267,23 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			}
 			else{
 				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
+				if (termPCB != NULL) {
+					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					if (PCBLiveNumber() > 1) {
+						//print states
+						SchedularPrinter("Terminate", termPID);
+						//terminate specified PCB
+						TerminateProcess(termPCB);
+					}
+					else {
+						HaltProcess();
+					}
+				}
+				else {
+					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
+				}
+
+				/*
 				if (termPCB != NULL && PCBLiveNumber() > 1){
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
 					//print states
@@ -277,6 +294,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				else{
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
+*/
 			}
 			break;
 		case SYSNUM_SUSPEND_PROCESS:
