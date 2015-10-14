@@ -282,19 +282,6 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				else {
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
-
-				/*
-				if (termPCB != NULL && PCBLiveNumber() > 1){
-					*SystemCallData->Argument[1] = ERR_SUCCESS;
-					//print states
-					SchedularPrinter("Terminate", termPID);
-					//terminate specified PCB
-					TerminateProcess(termPCB);
-				}
-				else{
-					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
-				}
-*/
 			}
 			break;
 		case SYSNUM_SUSPEND_PROCESS:

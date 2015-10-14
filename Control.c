@@ -292,12 +292,20 @@ void HaltProcess(){
 
 void TerminateProcess(struct Process_Control_Block *PCB) {
 	if (PCB != NULL) {
-		if (PCBLiveNumber() > 1) {
-			PCB->ProcessState = PCB_STATE_TERMINATE;
-			pcbTable->Terminated_Number += 1;
+		PCB->ProcessState = PCB_STATE_TERMINATE;
+		pcbTable->Terminated_Number += 1;
 
+		if (PCBLiveNumber() > 1) {
 			if (PCB == CurrentPCB()) {
-				Dispatcher();
+				if (ProcessorMode == Uniprocessor) {
+					//first PCB in Ready Queue starts
+					Dispatcher();
+				}
+				else {
+					OSSuspendCurrentProcess();
+				}
+
+//				Dispatcher();
 			}
 		}
 		else {
