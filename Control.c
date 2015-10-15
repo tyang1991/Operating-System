@@ -6,6 +6,9 @@
 #include "Utility.h"
 
 /*******************************Current State*********************************/
+//These functions returns current information
+
+//This function returns current time of system
 long CurrentTime(){
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
@@ -15,6 +18,7 @@ long CurrentTime(){
 	return mmio.Field1;
 }
 
+//This function returns current running Context
 long CurrentContext() {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 
@@ -24,12 +28,14 @@ long CurrentContext() {
 	return mmio.Field1;
 }
 
+//This function returns current running PCB
 struct Process_Control_Block *CurrentPCB() {
 	long currentContext = CurrentContext();
 	struct Process_Control_Block *PCB = findPCBbyContextID(currentContext);
 	return PCB;
 }
 
+//This function returns current running PID
 int CurrentPID() {
 	long currentContext = CurrentContext();
 	struct Process_Control_Block *PCB = findPCBbyContextID(currentContext);
@@ -44,11 +50,14 @@ int CurrentPID() {
 
 
 /******************************Process Controle*******************************/
+//This function is called whenever another PCB is needed to start
 void Dispatcher(){
 	switch (ProcessorMode) {
+		//in Uniprocessor mode, let Dispatcher_Uniprocessor() take charge.
 		case Uniprocessor:
 			Dispatcher_Uniprocessor();
 			break;
+		//in multiprocessor mode, let Dispatcher_Multiprocessor() take charge.
 		case Multiprocessor:
 			Dispatcher_Multiprocessor();
 			break;
@@ -272,15 +281,6 @@ void OSStartProcess(struct Process_Control_Block* PCB){
 	mmio.Field1 = PCB->ContextID;
 	mmio.Field2 = START_NEW_CONTEXT_AND_SUSPEND;
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
-}
-
-void IdleProcess(){
-	MEMORY_MAPPED_IO mmio;    //for hardware interface
-	// Go idle until the interrupt occurs
-	mmio.Mode = Z502Action;
-	mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
-	MEM_WRITE(Z502Idle, &mmio);       //  Let the interrupt for this timer occur
-	DoSleep(10);                       // Give it a little more time
 }
 
 void HaltProcess(){

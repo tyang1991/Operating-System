@@ -248,7 +248,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			break;
 		case SYSNUM_TERMINATE_PROCESS:
 			termPID = (long)SystemCallData->Argument[0];
-			if (termPID == -1){
+			if (termPID == -1) {
 				if (PCBLiveNumber() > 1) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
 					//print states
@@ -261,11 +261,11 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					HaltProcess();
 				}
 			}
-			if (termPID == -2){
+			if (termPID == -2) {
 				*SystemCallData->Argument[1] = ERR_SUCCESS;
 				HaltProcess();
 			}
-			else{
+			else {
 				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
 				if (termPCB != NULL) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
@@ -479,9 +479,27 @@ void osInit(int argc, char *argv[]) {
 
  	} // End of handler for sample code - This routine should never return here
 
+	/****************************Parse Input******************************/
+	long *TestToRun;
+	switch (argc){
+		case 2:
+			TestToRun = TestParser(argv[1]);
+			ProcessorMode = Uniprocessor;
+			break;
+		case 3:
+			TestToRun = TestParser(argv[1]);
+			ProcessorMode = Multiprocessor;
+			break;
+		default:
+			TestToRun = test1c;
+			ProcessorMode = Uniprocessor;
+			break;
+	}
+	/********************************************************************/
+
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", (long*)test1h, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", TestToRun, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

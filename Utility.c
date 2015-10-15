@@ -3,21 +3,65 @@
 #include "string.h"
 #include "Utility.h"
 #include "syscalls.h"
+#include "protos.h"
 
 /********************  Find  ***********************************************/
+//These functions find and return PCB in PCB Table by various properties
+
 struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 	//if PCB table is empty, return null PCB
 	if (pcbTable->Element_Number == 0){
-		//		printf("empty pcbTable, NULL returned\n");
 		return NULL;
 	}
 
 	//create a temp pointer to check elements
 	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
 
-	//check Element_Number-1 times because last element doesn't have a pointer to next
+	//check every PCB to see if any PCB is what we need
 	for (int i = 0; i < pcbTable->Element_Number; i++){
 		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
+			//if PCB found and not terminated, then return PCB
+			if (checkingElement->PCB->ProcessState == PCB_STATE_TERMINATE){
+				return NULL;
+			}
+			else{
+				return checkingElement->PCB;
+			}
+		}
+		else{
+			//if not found, return null
+			if (i == pcbTable->Element_Number - 1){
+				return NULL;
+			}
+			//check next PCB
+			else{
+				checkingElement = checkingElement->Next_Element;
+			}
+		}
+	}
+
+	//in case of error, return NULL in the end
+	return NULL;
+}
+
+struct Process_Control_Block *findPCBbyProcessID(int ProcessID){
+	//if PCB table is empty, return null PCB
+	if (pcbTable->Element_Number == 0){
+		return NULL;
+	}
+
+	//if PID = -1, return current running PID
+	if (ProcessID == -1) {
+		ProcessID = CurrentPID();
+	}
+
+	//create a temp pointer to check elements
+	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
+
+	//check every PCB to see if any PCB is what we need
+	for (int i = 0; i < pcbTable->Element_Number; i++){
+		if (checkingElement->PCB->ProcessID == ProcessID){
+			//if PCB found and not terminated, then return PCB
 			if (checkingElement->PCB->ProcessState == PCB_STATE_TERMINATE){
 				return NULL;
 			}
@@ -28,7 +72,6 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 		else{
 			//if not found, return null PCB
 			if (i == pcbTable->Element_Number - 1){
-				//				printf("PCB not found, NULL returned\n");
 				return NULL;
 			}
 			else{
@@ -36,39 +79,7 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 			}
 		}
 	}
-	return NULL;
-}
-
-struct Process_Control_Block *findPCBbyProcessID(int ProcessID){
-	//if PCB table is empty, return null PCB
-	if (pcbTable->Element_Number == 0){
-		//		printf("empty pcbTable, NULL returned\n");
-		return NULL;
-	}
-
-	if (ProcessID == -1) {
-		ProcessID = CurrentPID();
-	}
-
-	//create a temp pointer to check elements
-	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
-
-	//check Element_Number-1 times because last element doesn't have a pointer to next
-	for (int i = 0; i < pcbTable->Element_Number; i++){
-		if (checkingElement->PCB->ProcessID == ProcessID){
-			return checkingElement->PCB;
-		}
-		else{
-			//if not found, return null PCB
-			if (i == pcbTable->Element_Number - 1){
-				//				printf("PCB not found, NULL returned\n");
-				return NULL;
-			}
-			else{
-				checkingElement = checkingElement->Next_Element;
-			}
-		}
-	}
+	//in case of error, return NULL in the end
 	return NULL;
 }
 
@@ -102,8 +113,8 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 }
 /***************************************************************************/
 
-/*************************** Scheduler Printer******************************/
-#define PRINTSTATES 1  //1 to print states; 0 to hide states
+/****************************Scheduler Printer******************************/
+#define PRINTSTATES 0  //1 to print states; 0 to hide states
 void lockSP() {
 	READ_MODIFY(MEMORY_INTERLOCK_PRINTER, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -113,17 +124,28 @@ void unlockSP() {
 		&LockResult);
 }
 
+//This function prints current States of:
+//1. Ready Queue. 2. Timer Queue. 3. PCB suspended 4. PCB message suspended
+//5. PCBs currently running in Multiprocessor mode
+//Action and PID are passed into function so that it's easy to used by syscalls
 void SchedularPrinter(char *TargetAction, int TargetPID) {
 	if (PRINTSTATES) {
+		//lock SP and other data structure
 		lockSP();
 		lockPCBTable();
 		lockTimerQueue();
 		lockReadyQueue();
-		SP_INPUT_DATA SPData;    // Used to feed SchedulerPrinter
+
+		// Used to feed SchedulerPrinter
+		SP_INPUT_DATA SPData;    
 		memset(&SPData, 0, sizeof(SP_INPUT_DATA));
+
+		//pass args into SPData
 		strcpy(SPData.TargetAction, TargetAction);
-		SPData.CurrentlyRunningPID = CurrentPID();
 		SPData.TargetPID = TargetPID;
+
+		//pass current running PID in uniprocessor mode
+		SPData.CurrentlyRunningPID = CurrentPID();
 		SPData.NumberOfRunningProcesses = 1;
 
 		//PCB on Ready Queue
@@ -188,11 +210,54 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 			}
 		}
 
+		//print states using SPData with passed in information
 		CALL(SPPrintLine(&SPData));
+
+		//unlock SP and other data structure
 		unlockSP();
 		unlockPCBTable();
 		unlockTimerQueue();
 		unlockReadyQueue();
+	}
+}
+/***************************************************************************/
+
+/********************************Test Parser********************************/
+//This function returns relavent test pointer regarding to command line
+//input information
+long *TestParser(char *TestInput){
+	if (strcmp(TestInput, "test1a") == 0){
+		return (long *)test1a;
+	}
+	else if (strcmp(TestInput, "test1b") == 0){
+		return (long *)test1b;
+	}
+	else if (strcmp(TestInput, "test1c") == 0){
+		return (long *)test1c;
+	}
+	else if (strcmp(TestInput, "test1d") == 0){
+		return (long *)test1d;
+	}
+	else if (strcmp(TestInput, "test1e") == 0){
+		return (long *)test1e;
+	}
+	else if (strcmp(TestInput, "test1f") == 0){
+		return (long *)test1f;
+	}
+	else if (strcmp(TestInput, "test1h") == 0){
+		return (long *)test1h;
+	}
+	else if (strcmp(TestInput, "test1i") == 0){
+		return (long *)test1i;
+	}
+	else if (strcmp(TestInput, "test1j") == 0){
+		return (long *)test1j;
+	}
+	else if (strcmp(TestInput, "test1k") == 0){
+		return (long *)test1k;
+	}
+	else{
+		return test1c;
 	}
 }
 /***************************************************************************/

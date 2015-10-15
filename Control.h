@@ -8,7 +8,7 @@ int CurrentPID();
 /******************************Process Controle*******************************/
 #define Uniprocessor 1L
 #define Multiprocessor 2L
-#define ProcessorMode Multiprocessor
+long ProcessorMode;
 
 void Dispatcher();
 void Dispatcher_Uniprocessor();
@@ -18,7 +18,6 @@ void OSSuspendCurrentProcess();
 struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, long *priority, long *ProcessID, long *ErrorReturned);
 void OSStartProcess(struct Process_Control_Block* PCB);
 void SuspendProcess();
-void IdleProcess();
 void HaltProcess();
 void TerminateProcess(struct Process_Control_Block *PCB);
 void SuspendProcess(struct Process_Control_Block *PCB);

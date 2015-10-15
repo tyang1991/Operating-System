@@ -253,7 +253,7 @@ void test1c(void) {
 		SLEEP(SleepTime);
 		GET_PROCESS_ID("test1c_e", &ReturnedPID, &ErrorReturned);
 		i++;
-		printf("i=%d\n", i);
+//		printf("i=%d\n", i);
 	}
 	TERMINATE_PROCESS(-2, &ErrorReturned); /* Terminate all */
 
