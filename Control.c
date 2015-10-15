@@ -64,6 +64,7 @@ void Dispatcher(){
 	}
 }
 
+//This function is in charge of dispatching in uniprocessor mode
 void Dispatcher_Uniprocessor() {
 	struct Process_Control_Block *PCB;//for temp use
 
@@ -72,8 +73,10 @@ void Dispatcher_Uniprocessor() {
 			CALL(1);
 		}
 
+		//take the first PCB in ready queue to check status
 		PCB = readyQueue->First_Element->PCB;
 
+		//only take first PCB and break if PCB if not terminated nor suspended
 		if (PCB->ProcessState == PCB_STATE_LIVE) {
 			PCB = deReadyQueue();
 			break;
@@ -90,97 +93,23 @@ void Dispatcher_Uniprocessor() {
 		}
 	}
 
+	//start the PCB
 	OSStartProcess(PCB);
 }
-/*
+
+//This function is in charge of dispatching in multiprocessor mode
 void Dispatcher_Multiprocessor() {
 	struct Process_Control_Block *PCB;//for temp use
 
-	//if multiple processes running at the same time, we only start new process
-	//when ready queue is not empty
-	if (pcbTable->Cur_Running_Number > 1) {
-		if (readyQueue->Element_Number >= 1) {
-			do {
-				PCB = readyQueue->First_Element->PCB;
-
-				if (PCB->ProcessState == PCB_STATE_LIVE) {
-					PCB = deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_TERMINATE) {
-					deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
-					deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
-					PCB = deReadyQueue();
-				}
-
-				if (PCB != NULL) {
-					OSStartProcess_Only(PCB);
-				}
-
-			} while (readyQueue->Element_Number >= 1);
-		}
-
-		//suspend itself
-		PCB = CurrentPCB();
-		OSSuspendCurrentProcess();
-	}
-	//if only one process running, it's responsible to start another process
-	else {
-		while (1) {
-			while (readyQueue->Element_Number == 0) {
-				CALL(1);
-			}
-
-			PCB = readyQueue->First_Element->PCB;
-
-			do {
-				if (PCB->ProcessState == PCB_STATE_LIVE) {
-					PCB = deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_TERMINATE) {
-					deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_SUSPEND) {
-					deReadyQueue();
-				}
-				else if (PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
-					PCB = deReadyQueue();
-				}
-
-				if (PCB != NULL) {
-					OSStartProcess_Only(PCB);
-				}
-
-			} while (readyQueue->Element_Number >= 1);
-			//if other processes are started, break and suspend itself
-			if (pcbTable->Cur_Running_Number > 1) {
-				break;
-			}
-		}
-
-		//suspend itself
-		PCB = CurrentPCB();
-		if (PCB != NULL) {
-			OSSuspendCurrentProcess();
-		}
-	}
-
-}
-*/
-
-void Dispatcher_Multiprocessor() {
-	struct Process_Control_Block *PCB;//for temp use
-
+	//check the ready queue forever
 	while (1) {
+		//wait until ready queue is not empty
 		while (readyQueue->Element_Number == 0) {
 			CALL(1);
 		}
 
 		PCB = NULL;
-
+		//take PCB only if it's not terminated nor suspended
 		if (readyQueue->First_Element->PCB->ProcessState == PCB_STATE_LIVE) {
 			PCB = deReadyQueue();
 		}
@@ -193,13 +122,15 @@ void Dispatcher_Multiprocessor() {
 		else if (readyQueue->First_Element->PCB->ProcessState == PCB_STATE_MSG_SUSPEND) {
 			PCB = deReadyQueue();
 		}
-
+		//if a PCB is taken, start the PCB
 		if (PCB != NULL) {
 			OSStartProcess_Only(PCB);
 		}
 	}
 }
 
+//This function is used to start a new PCB without suspending others
+//in multiprocessor mode
 void OSStartProcess_Only(struct Process_Control_Block* PCB) {
 	if (PCB->ProcessState != PCB_STATE_RUNNING) {
 		MEMORY_MAPPED_IO mmio;
@@ -214,6 +145,7 @@ void OSStartProcess_Only(struct Process_Control_Block* PCB) {
 	}
 }
 
+//This function is used to suspend current running PCB, in multiprocessor mode
 void OSSuspendCurrentProcess() {
 	MEMORY_MAPPED_IO mmio;
 	pcbTable->Cur_Running_Number -= 1;
@@ -227,8 +159,9 @@ void OSSuspendCurrentProcess() {
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
 }
 
-#define MAX_PCB_NUMBER 10
+#define MAX_PCB_NUMBER 10 //limit number of PCB created
 
+//This function creates and returns a PCB
 struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, 
 							long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input

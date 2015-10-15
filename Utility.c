@@ -86,14 +86,13 @@ struct Process_Control_Block *findPCBbyProcessID(int ProcessID){
 struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 	//if PCB table is empty, return null PCB
 	if (pcbTable->Element_Number == 0) {
-		//		printf("empty pcbTable, NULL returned\n");
 		return NULL;
 	}
 
 	//create a temp pointer to check elements
 	struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
 
-	//check Element_Number-1 times because last element doesn't have a pointer to next
+	//check every PCB to see if any PCB is what we need
 	for (int i = 0; i < pcbTable->Element_Number; i++) {
 		if (checkingElement->PCB->ContextID == ContextID) {
 			return checkingElement->PCB;
@@ -101,7 +100,6 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 		else {
 			//if not found, return null PCB
 			if (i == pcbTable->Element_Number - 1) {
-				//				printf("PCB not found, NULL returned\n");
 				return NULL;
 			}
 			else {
@@ -114,7 +112,7 @@ struct Process_Control_Block *findPCBbyContextID(long ContextID) {
 /***************************************************************************/
 
 /****************************Scheduler Printer******************************/
-#define PRINTSTATES 0  //1 to print states; 0 to hide states
+//These two functions are used to lock and unlock SP
 void lockSP() {
 	READ_MODIFY(MEMORY_INTERLOCK_PRINTER, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -124,6 +122,7 @@ void unlockSP() {
 		&LockResult);
 }
 
+#define PRINTSTATES 0  //1 to print states; 0 to hide states
 //This function prints current States of:
 //1. Ready Queue. 2. Timer Queue. 3. PCB suspended 4. PCB message suspended
 //5. PCBs currently running in Multiprocessor mode
