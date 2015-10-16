@@ -6,6 +6,7 @@
 #include "global.h"
 #include "Utility.h"
 /*********************PCB Table************************/
+//initialize PCB Table
 void initPCBTable(){
 	pcbTable = (struct PCB_Table*)malloc(sizeof(struct PCB_Table));
 	pcbTable->Element_Number = 0;
@@ -15,6 +16,7 @@ void initPCBTable(){
 	pcbTable->Cur_Running_Number = 0;
 }
 
+//put a PCB into PCB table
 void enPCBTable(struct Process_Control_Block *PCB){
 	lockPCBTable();
 
@@ -34,11 +36,13 @@ void enPCBTable(struct Process_Control_Block *PCB){
 	unlockPCBTable();
 }
 
+//calculate PCBs that are runnable at present
 int PCBLiveNumber() {
 	return pcbTable->Element_Number - pcbTable->Suspended_Number
 		- pcbTable->Terminated_Number - pcbTable->Msg_Suspended_Number;
 }
 
+//These two functions are used to lock and unlock PCB table
 void lockPCBTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -48,25 +52,27 @@ void unlockPCBTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_PCB_Table, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
 }
-
 /*******************************************************/
 
 /*********************Timer Queue**********************/
+//initialize timer queue
 void initTimerQueue(){
 	timerQueue = (struct Timer_Queue*)malloc(sizeof(struct Timer_Queue));
 	timerQueue->Element_Number = 0;
 }
 
+//put a PCB into timer queue
 void enTimerQueue(struct Process_Control_Block *PCB){
 	//lock timer queue
 	lockTimerQueue();
 	//Set Location
 	PCB->ProcessLocation = PCB_LOCATION_TIMER_QUEUE;
-
+	//create a new timer queue element
 	struct Timer_Queue_Element *newElement = (struct Timer_Queue_Element*)malloc(sizeof(struct Timer_Queue_Element));
 	newElement->PCB = PCB;
 	int insertPosition = -1;
 	
+	//if timer queue is empty
 	if (timerQueue->Element_Number == 0){
 		//build timer queue element
 		newElement->Prev_Element = newElement;
@@ -74,9 +80,11 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 		//set inser position
 		insertPosition = 0;
 	}
+	//if timer queue not empty
 	else{
+		//create a pointer for iteration
 		struct Timer_Queue_Element *checkingElement = timerQueue->First_Element;
-
+		//check wake up time of each PCB to insert 
 		for (insertPosition = 0; insertPosition < timerQueue->Element_Number; insertPosition++){
 			if (newElement->PCB->WakeUpTime < checkingElement->PCB->WakeUpTime){
 				//change list links
@@ -109,28 +117,34 @@ void enTimerQueue(struct Process_Control_Block *PCB){
 	unlockTimerQueue();
 }
 
+//take and return the first PCB of timer queue
 struct Process_Control_Block *deTimerQueue(){
+	//if timer queue empty, return NULL
 	if (timerQueue->Element_Number == 0){
 		printf("There is no element in timer queue\n");
 		return NULL;
 	}
+	//if not empty
 	else{
+		//lock timer queue
 		lockTimerQueue();
 		struct Process_Control_Block *PCB = timerQueue->First_Element->PCB;
-
+		//change PCB state
 		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
 
+		//if only one PCB lift in timer queue
 		if (timerQueue->Element_Number == 1){
 			timerQueue->First_Element = NULL;
 		}
+		//more than one PCB in timer queue
 		else{
-			//we don't care about the discarded element
+			//change queue link
 			timerQueue->First_Element->Prev_Element->Next_Element = timerQueue->First_Element->Next_Element;
 			timerQueue->First_Element->Next_Element->Prev_Element = timerQueue->First_Element->Prev_Element;
 			timerQueue->First_Element = timerQueue->First_Element->Next_Element;
 		}
 		timerQueue->Element_Number -= 1;
-
+		//unlock timer queue
 		unlockTimerQueue();
 
 		//return timerout PCB
@@ -138,6 +152,7 @@ struct Process_Control_Block *deTimerQueue(){
 	}
 }
 
+//for lock and unlock timer queue
 void lockTimerQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_TIMER_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -150,11 +165,13 @@ void unlockTimerQueue() {
 /*******************************************************/
 
 /*********************Ready Queue**********************/
+//initialize ready queue
 void initReadyQueue(){
 	readyQueue = (struct Ready_Queue*)malloc(sizeof(struct Ready_Queue));
 	readyQueue->Element_Number = 0;
 }
 
+//put a PCB in ready queue in the order of priority
 void enReadyQueue(struct Process_Control_Block *PCB){
 	//lock ready queue
 	lockReadyQueue();
@@ -162,8 +179,10 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 	struct Ready_Queue_Element *newElement = (struct Ready_Queue_Element*)malloc(sizeof(struct Ready_Queue_Element));
 	newElement->PCB = PCB;
 	int insertPosition = -1;
+	//set PCB position
 	PCB->ProcessLocation = PCB_LOCATION_READY_QUEUE;
 
+	//if ready queue empty
 	if (readyQueue->Element_Number == 0){
 		//build ready queue element
 		newElement->Prev_Element = newElement;
@@ -171,9 +190,10 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		//set inser position
 		insertPosition = 0;
 	}
+	//if ready queue not empty
 	else{
 		struct Ready_Queue_Element *checkingElement = readyQueue->First_Element;
-
+		//check every element based on priority
 		for (insertPosition = 0; insertPosition < readyQueue->Element_Number; insertPosition++){
 			if (newElement->PCB->Priority < checkingElement->PCB->Priority){
 				//change list links
@@ -202,51 +222,60 @@ void enReadyQueue(struct Process_Control_Block *PCB){
 		readyQueue->First_Element = newElement;
 	}
 	readyQueue->Element_Number += 1;
-
+	//unlock ready queue
 	unlockReadyQueue();
 }
 
+//take and return the first PCB in ready queue
 struct Process_Control_Block *deReadyQueue(){
+	//if ready queue empty, return NULL
 	if (readyQueue->Element_Number == 0){
 		printf("There is no element in ready queue\n");
 		return NULL;
 	}
+	//if ready queue not empty
 	else{
 		//lock ready queue
 		lockReadyQueue();
 
 		struct Process_Control_Block *PCB = readyQueue->First_Element->PCB;
-
+		//set location
 		PCB->ProcessLocation = PCB_LOCATION_FLOATING;
 
+		//if only one PCB in ready queue
 		if (readyQueue->Element_Number == 1){
 			readyQueue->First_Element = NULL;
 		}
+		//if more than one PCB in ready queue
 		else{
 			readyQueue->First_Element->Prev_Element->Next_Element = readyQueue->First_Element->Next_Element;
 			readyQueue->First_Element->Next_Element->Prev_Element = readyQueue->First_Element->Prev_Element;
 			readyQueue->First_Element = readyQueue->First_Element->Next_Element;
 		}
 		readyQueue->Element_Number -= 1;
-
+		//unlock ready queue
 		unlockReadyQueue();
-
 		//return timerout PCB
 		return PCB;
 	}
 }
 
+//take a certain PCB out of ready queue, for CHANGE_PRIORITY
 struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
+	//if ready queue empty
 	if (readyQueue->Element_Number == 0) {
 		printf("There is no element in ready queue\n");
 		return NULL;
 	}
+	//if ready queue not empty
 	else {
+		//lock ready queue
 		lockReadyQueue();
 
 		struct Ready_Queue_Element *checkingElement = readyQueue->First_Element;
-		
+		//find the PCB regarding PID
 		for (int i = 0; i < readyQueue->Element_Number; i++) {
+			//if PCB found
 			if (checkingElement->PCB->ProcessID == PID) {
 				checkingElement->Next_Element->Prev_Element = checkingElement->Prev_Element;
 				checkingElement->Prev_Element->Next_Element = checkingElement->Next_Element;
@@ -264,14 +293,15 @@ struct Process_Control_Block *deCertainPCBFromReadyQueue(int PID) {
 				checkingElement = checkingElement->Next_Element;
 			}
 		}
-
 		readyQueue->Element_Number -= 1;
+		//unlock ready queue
 		unlockReadyQueue();
 
 		return checkingElement->PCB;
 	}
 }
 
+//lock and unlock ready queue
 void lockReadyQueue() {
 	READ_MODIFY(MEMORY_INTERLOCK_READY_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
@@ -284,6 +314,7 @@ void unlockReadyQueue() {
 /*******************************************************/
 
 /************************Message************************/
+//initialize message table
 void initMessageTable() {
 	messageTable = (struct Message_Table*)malloc(sizeof(struct Message_Table));
 	messageTable->Element_Number = 0;
@@ -292,6 +323,7 @@ void initMessageTable() {
 #define         MAX_MESSAGE_LENGTH           (INT16)64
 #define         MAX_MASSAGE_NUMBER           (INT16)10
 
+//create and return a message
 struct Message *CreateMessage(long Target_PID, char *Message_Buffer, long SendLength, long *ErrorReturned) {
 	//check input
 	if (Target_PID < -1 || Target_PID > pcbTable->Element_Number - 1) {
@@ -324,17 +356,20 @@ struct Message *CreateMessage(long Target_PID, char *Message_Buffer, long SendLe
 	}
 }
 
+//put a message into message table in the order of coming order
 void enMessageTable(struct Message *Message) {
 	lockMessageTable();
 
 	struct Message_Table_Element *newElement = (struct Message_Table_Element*)malloc(sizeof(struct Message_Table_Element));
 	newElement->Message = Message;
 
+	//if message table empty
 	if (messageTable->Element_Number == 0) {
 		newElement->Prev_Element = newElement;
 		newElement->Next_Element = newElement;
 		messageTable->First_Element = newElement;
 	}
+	//if not empty
 	else {
 		//always put new message at the end of message table
 		newElement->Prev_Element = messageTable->First_Element->Prev_Element;
@@ -347,12 +382,14 @@ void enMessageTable(struct Message *Message) {
 	unlockMessageTable();
 }
 
+//remove a message from message table
 void RemoveMessage(struct Message_Table_Element *MessageToRemove) {
 	lockMessageTable();
 
 	if (MessageToRemove == NULL || messageTable->Element_Number == 0) {
 		printf("Unable to remove Message\n");
 	}
+	//reconnect linking message
 	else {
 		MessageToRemove->Prev_Element->Next_Element = MessageToRemove->Next_Element;
 		MessageToRemove->Next_Element->Prev_Element = MessageToRemove->Prev_Element;
@@ -370,6 +407,7 @@ void RemoveMessage(struct Message_Table_Element *MessageToRemove) {
 	unlockMessageTable();
 }
 
+//find out if a message in message table
 #define GO_ON 1
 #define STAY  0
 int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength, 
@@ -396,18 +434,25 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 
 	struct Message_Table_Element *checkingElement = messageTable->First_Element;
 
+	//check every message until found
 	for (int i = 0; i < messageTable->Element_Number; i++) {
+		//when receive a targeted message
 		if (Source_PID != -1) {
-			if ( (checkingElement->Message->Target_PID == receiverPID || checkingElement->Message->Target_PID == -1)
+			//find a message from a certain sender
+			if ((checkingElement->Message->Target_PID == receiverPID || checkingElement->Message->Target_PID == -1)
 				&& checkingElement->Message->Sender_PID == Source_PID){
+					//if message can be received
 				if (ReceiveLength >= checkingElement->Message->Message_Length) {
-
 					*ErrorReturned_ReceiveMessage = ERR_SUCCESS;
-					if (checkingElement->Message->Target_PID == -1) {//if broadcast
+					//if a broadcast message, return actual sender PID
+					if (checkingElement->Message->Target_PID == -1) {
 						*ActualSourcePID = checkingElement->Message->Sender_PID;
 					}
+					//return send length
 					*ActualSendLength = checkingElement->Message->Message_Length;
+					//copy message
 					strcpy(ReceiveBuffer, checkingElement->Message->Message_Buffer);
+					//remove message from message table
 					RemoveMessage(checkingElement);
 				}
 				else {
@@ -426,9 +471,12 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 				}
 			}
 		}
+		//when receive from a targeted or broadcast message
 		else {
+			//if found
 			if ( (checkingElement->Message->Target_PID == receiverPID || checkingElement->Message->Target_PID == -1) 
 				&& checkingElement->Message->Sender_PID != receiverPID ) {
+				//if message length shorter than receive length, copy message information back
 				if (ReceiveLength >= checkingElement->Message->Message_Length) {
 					*ErrorReturned_ReceiveMessage = ERR_SUCCESS;
 					*ActualSourcePID = checkingElement->Message->Sender_PID;
@@ -459,6 +507,7 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 	return returnState;
 }
 
+//lock and unlock message table
 void lockMessageTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);

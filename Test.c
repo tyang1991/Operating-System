@@ -55,6 +55,7 @@
 #include         "stdlib.h"
 #include         "math.h"
 #include "queue.h"
+#include "Utility.h"
 
 INT16 Z502_PROGRAM_COUNTER;
 
@@ -962,18 +963,27 @@ void test1x(void) {
 
 	GET_PROCESS_ID("", &OurProcessID, &ErrorReturned);
 	printf("Release %s:Test 1x: Pid %ld\n", CURRENT_REL, OurProcessID);
-
+	long t;
 	for (Iterations = 0; Iterations < NUMBER_OF_TEST1X_ITERATIONS;
 			Iterations++) {
 		GET_TIME_OF_DAY(&RandomSeed);
 		RandomSleep = (RandomSleep * RandomSeed) % 143;
 		SLEEP(RandomSleep);
 		GET_TIME_OF_DAY(&EndingTime);
-		printf("Test1X: Pid = %d, Sleep Time = %ld, Latency Time = %d\n",
-				(int) OurProcessID, RandomSleep,
-				(int) (EndingTime - RandomSeed));
+//		printf("Test1X: Pid = %d, Sleep Time = %ld, Latency Time = %d\n",
+//				(int) OurProcessID, RandomSleep,
+//				(int) (EndingTime - RandomSeed));
+		GET_TIME_OF_DAY(&t);
+
+		printf("%d. Test1X: Pid = %d, Sleep Time = %ld, Latency Time = %d\n",t,
+			(int)OurProcessID, RandomSleep,
+			(int)(EndingTime - RandomSeed));
+
 	}
-	printf("Test1x, PID %ld, Ends at Time %ld\n", OurProcessID, EndingTime);
+//	printf("Test1x, PID %ld, Ends at Time %ld\n", OurProcessID, EndingTime);
+	GET_TIME_OF_DAY(&t);
+
+	printf("%d. Test1x, PID %ld, Ends at Time %ld\n", t, OurProcessID, EndingTime);
 
 	TERMINATE_PROCESS(-1, &ErrorReturned);
 	printf("ERROR: Test1x should be terminated but isn't.\n");

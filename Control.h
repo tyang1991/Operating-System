@@ -8,6 +8,7 @@ int CurrentPID();
 /******************************Process Controle*******************************/
 #define Uniprocessor 1L
 #define Multiprocessor 2L
+//this value is used to set processor mode
 long ProcessorMode;
 
 void Dispatcher();
