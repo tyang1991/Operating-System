@@ -62,13 +62,14 @@ void InterruptHandler(void) {
 	//Status = mmio.Field2;
 
 /////////////////////////Code go here////////////////////////////////////
-	struct Process_Control_Block *tmpPCB = deTimerQueue();
-	enReadyQueue(tmpPCB);
 
-	while (ResetTimer() == 0){
+	//take all timeout PCB from timer queue and put into ready queue
+	struct Process_Control_Block *tmpPCB;
+
+	do{
 		tmpPCB = deTimerQueue();
 		enReadyQueue(tmpPCB);
-	}
+	} while (ResetTimer() == 0);
 
 /////////////////////////Code end here///////////////////////////////////
 	
@@ -99,7 +100,7 @@ void FaultHandler(void) {
 	printf("Fault_handler: Found vector type %d with value %d\n", DeviceID,
 			Status);
 	/*****************************My Code******************************/
-	
+	//temperary code for test1k
 	HaltProcess();
 	
 	/******************************************************************/
@@ -179,49 +180,53 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 		do_print--;
 	}
 	switch (call_type) {
-			// Get time service call
-		case SYSNUM_GET_TIME_OF_DAY:   // This value is found in syscalls.h
+		//get and return current system time
+		case SYSNUM_GET_TIME_OF_DAY:
 			mmio.Mode = Z502ReturnValue;
 			mmio.Field1 = mmio.Field2 = mmio.Field3 = 0;
 			MEM_READ(Z502Clock, &mmio);
 			Temp_Clock = mmio.Field1;
 			*SystemCallData->Argument[0] = Temp_Clock;
 			break;
+		//create a new PCB and put it into pcb table and ready queue
 		case SYSNUM_CREATE_PROCESS:
+			//create a new PCB
 			newPCB = OSCreateProcess(SystemCallData->Argument[0], SystemCallData->Argument[1],
 							SystemCallData->Argument[2], SystemCallData->Argument[3], 
 							SystemCallData->Argument[4]);
+			//if create successfully, put it into PCB table and ready queue
 			if (newPCB != NULL) {
 				SchedularPrinter("Create", newPCB->ProcessID);//print states
 				enPCBTable(newPCB);
 				enReadyQueue(newPCB);
 			}
 			break;
+		//return PID regarding process name
 		case SYSNUM_GET_PROCESS_ID:
 			ProcessName = (char*)SystemCallData->Argument[0];
+			//if no input process name, return the current running PID
 			if (strcmp(ProcessName, "") == 0) {
 				PCBbyProcessName = CurrentPCB();
 				*SystemCallData->Argument[1] = PCBbyProcessName->ProcessID;
 				*SystemCallData->Argument[2] = ERR_SUCCESS;
 			}
+			//find the PCB in PCB table and return PID if found
 			else {
 				PCBbyProcessName = findPCBbyProcessName(ProcessName);
+				//if found, return PID
 				if (PCBbyProcessName != NULL) {
 					ReturnedPID = PCBbyProcessName->ProcessID;
-					if (ReturnedPID != -1) {
-						*SystemCallData->Argument[1] = ReturnedPID;
-						*SystemCallData->Argument[2] = ERR_SUCCESS;
-					}
-					else {
-						*SystemCallData->Argument[1] = -1;
-						*SystemCallData->Argument[2] = ERR_BAD_PARAM;
-					}
+					*SystemCallData->Argument[1] = ReturnedPID;
+					*SystemCallData->Argument[2] = ERR_SUCCESS;
 				}
+				//if not found, return error
 				else {
 					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 				}
 			}
 			break;
+		//if a PCB wanna sleep, put itself into timer queue and start
+		//a new PCB
 		case SYSNUM_SLEEP:
 			//print states
 			SchedularPrinter("Sleep", CurrentPID());
@@ -230,14 +235,14 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			sleepPCB = CurrentPCB();
 			sleepPCB->WakeUpTime = CurrentTime() + Sleep_Time;
 			//Put current running PCB into timer queue and reset time 
-
 			lockTimer();
 			enTimerQueue(sleepPCB);
 			if (sleepPCB == timerQueue->First_Element->PCB){
 				SetTimer(Sleep_Time);
 			}
 			unlockTimer();
-
+			//in uniprocessor, start a new PCB
+			//in multiprocessor, only suspend itself
 			if (ProcessorMode == Uniprocessor) {
 				//first PCB in Ready Queue starts
 				Dispatcher();
@@ -246,8 +251,10 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				OSSuspendCurrentProcess();
 			}
 			break;
+		//terminate a process
 		case SYSNUM_TERMINATE_PROCESS:
 			termPID = (long)SystemCallData->Argument[0];
+			//if PID = -1, terminate current running PCB
 			if (termPID == -1) {
 				if (PCBLiveNumber() > 1) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
@@ -261,20 +268,25 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					HaltProcess();
 				}
 			}
+			//if PID = -2, terminate OS
 			if (termPID == -2) {
 				*SystemCallData->Argument[1] = ERR_SUCCESS;
 				HaltProcess();
 			}
+			//if PID positive, terminate specified PID
 			else {
 				termPCB = findPCBbyProcessID((long)SystemCallData->Argument[0]);
+				//if PCB found, terminate it
 				if (termPCB != NULL) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
+					//if more than one PCB alive, simply terminate it
 					if (PCBLiveNumber() > 1) {
 						//print states
 						SchedularPrinter("Terminate", termPID);
 						//terminate specified PCB
 						TerminateProcess(termPCB);
 					}
+					//if last alive PCB, terminate OS
 					else {
 						HaltProcess();
 					}
@@ -284,9 +296,12 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				}
 			}
 			break;
+		//suspend a PCB, which can be resumed
 		case SYSNUM_SUSPEND_PROCESS:
 			suspendPID = (int)SystemCallData->Argument[0];
+			//if PID = -1, suspend current running PCB
 			if (suspendPID == -1) {
+				//if more than one PCB alive, suspend it
 				if (PCBLiveNumber() > 1) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
 					//print states
@@ -294,13 +309,17 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 					//Suspend Current Process
 					SuspendProcess(CurrentPCB());
 				}
+				//if last one PCB alive, return error
 				else {
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
 			}
+			//if PID positive, suspend specified PCB
 			else {
 				suspendPCB = findPCBbyProcessID((int)suspendPID);
+				//if PCB found
 				if (suspendPCB != NULL) {
+					//if more than one PCB alive, suspend it
 					if (suspendPCB->ProcessState == PCB_STATE_LIVE && PCBLiveNumber() > 1) {
 						*SystemCallData->Argument[1] = ERR_SUCCESS;
 						//print states
@@ -308,6 +327,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 						//Suspend specified process
 						SuspendProcess(suspendPCB);
 					}
+					//if last one PCB alive, return error
 					else {
 						*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 					}
@@ -317,10 +337,13 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				}
 			}
 			break;
+		//resumes a previously suspended PCB
 		case SYSNUM_RESUME_PROCESS:
 			resumePID = (int)SystemCallData->Argument[0];
 			resumePCB = findPCBbyProcessID(resumePID);
+			//if PCB found
 			if (resumePCB != NULL) {
+				//if PCB is previously suspended
 				if (resumePCB->ProcessState == PCB_STATE_SUSPEND) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
 					//print states
@@ -336,17 +359,19 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 			}
 			break;
+		//change the priority of a PCB
 		case SYSNUM_CHANGE_PRIORITY:
 			changePrioPID = (int)SystemCallData->Argument[0];
 			changePrioPCB = findPCBbyProcessID((int)changePrioPID);
 			newPriority = (int)SystemCallData->Argument[1];
+			//if legal priority
 			if (newPriority<=40 && newPriority>=0) {
 				if (changePrioPCB != NULL) {
 					*SystemCallData->Argument[2] = ERR_SUCCESS;
 					//print states
 					printf("Before changing Priority\n");
 					SchedularPrinter("ChangePrio", changePrioPID);
-					
+					//if PCB in ready queue, change order in ready queue
 					if (changePrioPCB->ProcessLocation == PCB_LOCATION_READY_QUEUE
 										&& newPriority != changePrioPCB->Priority) {
 						changePrioPCB = deCertainPCBFromReadyQueue(changePrioPID);
@@ -368,19 +393,22 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
 			}
 			break;
+		//PCB stores a message in message table
 		case SYSNUM_SEND_MESSAGE:
 			TargetPID = (long)SystemCallData->Argument[0];
 			MessageBuffer = (char*)SystemCallData->Argument[1];
 			SendLength = (long)SystemCallData->Argument[2];
 			ErrorReturned_SendMessage = SystemCallData->Argument[3];
-
+			//create a message
 			MessageCreated = CreateMessage(TargetPID, MessageBuffer, 
 				                        SendLength, ErrorReturned_SendMessage);
+			//if successfully create a message, put it into message table
 			if (MessageCreated != NULL) {
 				SchedularPrinter("SendMsg", CurrentPID());
 				enMessageTable(MessageCreated);
 			}
 			break;
+		//retrive a message in message table
 		case SYSNUM_RECEIVE_MESSAGE:
 			SourcePID = (long)SystemCallData->Argument[0];
 			ReceiveBuffer = (char*)SystemCallData->Argument[1];
@@ -391,7 +419,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Mess_PCB = CurrentPCB();
 			Mess_PCB->ProcessState = PCB_STATE_MSG_SUSPEND;
 			pcbTable->Msg_Suspended_Number += 1;
-
+			//PCB kept suspended by sleep until find a message
 			while (findMessage(SourcePID, ReceiveBuffer, ReceiveLength,
 				ActualSendLength, ActualSourcePID, ErrorReturned_ReceiveMessage) == 0) {
 				Mess_PCB->WakeUpTime = CurrentTime() + 10;

@@ -206,9 +206,6 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
 	*ProcessID = newPCB->ProcessID;
 
-	//print information of PCB created
-	printf("Create PCB: ProcessName: %s; PID: %d\n", (char*)ProcessName, newPCB->ProcessID);
-
 	//return the PCB created
 	return newPCB;
 }
