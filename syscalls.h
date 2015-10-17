@@ -45,6 +45,7 @@
 #define         SYSNUM_DISK_READ                       13
 #define         SYSNUM_DISK_WRITE                      14
 #define         SYSNUM_DEFINE_SHARED_AREA              15
+#define         SYSNUM_RESTART_PROCESS                 16
 
 // This structure defines the format used for all system calls.
 // For each call, the structure is filled in and then its address
@@ -116,6 +117,19 @@ extern int BaseThread();
                 SoftwareTrap(SystemCallData);                                  \
                 free(SystemCallData);                                          \
                 }                                                              \
+
+#define         RESTART_PROCESS( arg1, arg2, arg3 )                {                                 \
+				SYSTEM_CALL_DATA *SystemCallData =                             \
+		 			 (SYSTEM_CALL_DATA *)calloc(1, sizeof (SYSTEM_CALL_DATA)); \
+				SystemCallData->NumberOfArguments = 4;                         \
+				SystemCallData->SystemCallNumber = SYSNUM_RESTART_PROCESS;     \
+				SystemCallData->Argument[0] = (long *)arg1;                    \
+				SystemCallData->Argument[1] = (long *)arg2;                    \
+				SystemCallData->Argument[2] = (long *)arg3;                    \
+				ChargeTimeAndCheckEvents( COST_OF_SOFTWARE_TRAP );             \
+				SoftwareTrap(SystemCallData);                                  \
+				free(SystemCallData);                                          \
+}                                                                              \
 
 #define         CREATE_PROCESS( arg1, arg2, arg3, arg4, arg5 )   {             \
                 SYSTEM_CALL_DATA *SystemCallData =                             \

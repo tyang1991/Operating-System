@@ -204,6 +204,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	newPCB->ProcessName = newProcessName;
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
+	newPCB->TestToRun = Test_To_Run;
 	*ProcessID = newPCB->ProcessID;
 
 	//return the PCB created
@@ -237,7 +238,7 @@ void TerminateProcess(struct Process_Control_Block *PCB) {
 		PCB->ProcessState = PCB_STATE_TERMINATE;
 		pcbTable->Terminated_Number += 1;
 		//terminate if more than one runnable PCBs, otherwise halt
-		if (PCBLiveNumber() > 1) {
+		if (PCBLiveNumber() >= 1) {
 			//do more actions when terminating current PCB
 			if (PCB == CurrentPCB()) {
 				//if uniprocessor, start a new PCB

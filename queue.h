@@ -48,6 +48,7 @@ struct Process_Control_Block  {
 	long         ProcessLocation;
 	long         WakeUpTime;
 	int          Priority;
+	long*        TestToRun;
 };
 //PCB table element
 struct PCB_Table_Element {

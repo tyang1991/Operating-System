@@ -4,6 +4,7 @@
 #include "Utility.h"
 #include "syscalls.h"
 #include "protos.h"
+#include "MyTest.h"
 
 /********************  Find  ***********************************************/
 //These functions find and return PCB in PCB Table by various properties
@@ -19,9 +20,9 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 
 	//check every PCB to see if any PCB is what we need
 	for (int i = 0; i < pcbTable->Element_Number; i++){
+		//if PCB found and not terminated, then return PCB
 		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0
 			&& checkingElement->PCB->ProcessState != PCB_STATE_TERMINATE){
-			//if PCB found and not terminated, then return PCB
 			return checkingElement->PCB;
 		}
 		else{
@@ -250,6 +251,9 @@ long *TestParser(char *TestInput){
 	}
 	else if (strcmp(TestInput, "test1k") == 0){
 		return (long *)test1k;
+	}
+	else if (strcmp(TestInput, "test1myTest") == 0){
+		return (long *)test1myTest;
 	}
 	else{
 		return test1c;
