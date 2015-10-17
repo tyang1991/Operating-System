@@ -527,7 +527,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", TestToRun, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", test1j, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

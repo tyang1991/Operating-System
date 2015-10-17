@@ -19,14 +19,10 @@ struct Process_Control_Block *findPCBbyProcessName(char* ProcessName){
 
 	//check every PCB to see if any PCB is what we need
 	for (int i = 0; i < pcbTable->Element_Number; i++){
-		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0){
+		if (strcmp(checkingElement->PCB->ProcessName, ProcessName) == 0
+			&& checkingElement->PCB->ProcessState != PCB_STATE_TERMINATE){
 			//if PCB found and not terminated, then return PCB
-			if (checkingElement->PCB->ProcessState == PCB_STATE_TERMINATE){
-				return NULL;
-			}
-			else{
-				return checkingElement->PCB;
-			}
+			return checkingElement->PCB;
 		}
 		else{
 			//if not found, return null

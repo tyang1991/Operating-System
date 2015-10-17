@@ -39,6 +39,9 @@
     <ClCompile Include="Utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyTest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
