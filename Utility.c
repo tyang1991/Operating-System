@@ -5,6 +5,7 @@
 #include "syscalls.h"
 #include "protos.h"
 #include "MyTest.h"
+#include "Control.h"
 
 /********************  Find  ***********************************************/
 //These functions find and return PCB in PCB Table by various properties
@@ -119,7 +120,7 @@ void unlockSP() {
 		&LockResult);
 }
 
-#define PRINTSTATES 0  //1 to print states; 0 to hide states
+#define PRINTSTATES 1  //1 to print states; 0 to hide states
 //This function prints current States of:
 //1. Ready Queue. 2. Timer Queue. 3. PCB suspended 4. PCB message suspended
 //5. PCBs currently running in Multiprocessor mode
@@ -135,13 +136,14 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 		// Used to feed SchedulerPrinter
 		SP_INPUT_DATA SPData;
 		memset(&SPData, 0, sizeof(SP_INPUT_DATA));
-
+		
 		//pass args into SPData
 		strcpy(SPData.TargetAction, TargetAction);
 		SPData.TargetPID = TargetPID;
 
 		//pass current running PID in uniprocessor mode
-		SPData.CurrentlyRunningPID = CurrentPID();
+//		struct Process_Control_Block *PCB = CurrentPCB();
+//		SPData.CurrentlyRunningPID = PCB->ProcessID;
 		SPData.NumberOfRunningProcesses = 1;
 
 		//PCB on Ready Queue
@@ -208,7 +210,7 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 
 		//print states using SPData with passed in information
 		CALL(SPPrintLine(&SPData));
-
+//		free(SPData);
 		//unlock SP and other data structure
 		unlockSP();
 		unlockPCBTable();

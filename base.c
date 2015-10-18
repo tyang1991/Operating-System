@@ -337,6 +337,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			suspendPID = (int)SystemCallData->Argument[0];
 			//if PID = -1, suspend current running PCB
 			if (suspendPID == -1) {
+//				/*
 				//if more than one PCB alive, suspend it
 				if (PCBLiveNumber() > 1) {
 					*SystemCallData->Argument[1] = ERR_SUCCESS;
@@ -349,6 +350,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				else {
 					*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 				}
+//				*/
+//				*SystemCallData->Argument[1] = ERR_BAD_PARAM;
 			}
 			//if PID positive, suspend specified PCB
 			else {

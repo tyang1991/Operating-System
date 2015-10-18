@@ -54,8 +54,6 @@ multiprocessors.
 #include         "string.h"
 #include         "stdlib.h"
 #include         "math.h"
-#include "queue.h"
-#include "Utility.h"
 
 INT16 Z502_PROGRAM_COUNTER;
 
@@ -171,7 +169,7 @@ void test1b(void) {
 	TERMINATE_PROCESS(ProcessID2, &ErrorReturned);
 	SuccessExpected(ErrorReturned, "TERMINATE_PROCESS");
 
-	// Loop until an error is found on the CREATE_PROCESS system call.
+	// Loop until an error is found on the CREATE_PROCESS stystem call.
 	// Since the call itself is legal, we must get an error
 	// because we exceed some limit.
 	ErrorReturned = ERR_SUCCESS;
@@ -231,7 +229,7 @@ void test1c(void) {
 	long ReturnedPID;           // Value of PID returned by System Call
 	long ErrorReturned;
 	long SleepTime = 1000;
-	int i = 0;
+
 	printf("This is Release %s:  Test 1c\n", CURRENT_REL);
 	CREATE_PROCESS("test1c_a", test1x, PRIORITY1C, &ProcessID1, &ErrorReturned);
 	SuccessExpected(ErrorReturned, "CREATE_PROCESS");
@@ -243,6 +241,7 @@ void test1c(void) {
 	CREATE_PROCESS("test1c_d", test1x, PRIORITY1C, &ProcessID4, &ErrorReturned);
 
 	CREATE_PROCESS("test1c_e", test1x, PRIORITY1C, &ProcessID5, &ErrorReturned);
+
 	// Now we sleep, see if one of the five processes has terminated, and
 	// continue the cycle until one of them is gone.  This allows the test1x
 	// processes to exhibit scheduling.
@@ -253,16 +252,8 @@ void test1c(void) {
 	while (ErrorReturned == ERR_SUCCESS) {
 		SLEEP(SleepTime);
 		GET_PROCESS_ID("test1c_e", &ReturnedPID, &ErrorReturned);
-		printf("PCB States: ");
-		struct PCB_Table_Element *checkingElement = pcbTable->First_Element;
-		for (int j = 0; j < pcbTable->Element_Number; j++){
-			printf("%d ", checkingElement->PCB->ProcessState);
-			checkingElement = checkingElement->Next_Element;
-		}
-		printf("\n");
-		i++;
 	}
-	printf("!!!!!!!!test1c terminate\n");
+
 	TERMINATE_PROCESS(-2, &ErrorReturned); /* Terminate all */
 
 }                                                     // End test1c
@@ -987,6 +978,7 @@ void test1x(void) {
 	printf("ERROR: Test1x should be terminated but isn't.\n");
 
 }                                                  // End of test1x 
+
 /**************************************************************************
 
 Test1j_echo

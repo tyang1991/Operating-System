@@ -3,6 +3,7 @@
 
 #define         PRIORITY1C              10
 void test1xx(void);
+void mySuccessExpected(INT32 ErrorCode, char sys_call[]);
 /**************************************************************************
 Test1myTest
 
@@ -30,6 +31,7 @@ void test1myTest(void){
 	}
 
 	RESTART_PROCESS(ProcessID1, &ProcessID2, &ErrorReturned);
+	mySuccessExpected(ErrorReturned, "RESTART_PROCESS");
 
 	while (ErrorReturned == ERR_SUCCESS) {
 		SLEEP(SleepTime);
@@ -76,3 +78,13 @@ void test1xx(void) {
 	TERMINATE_PROCESS(-1, &ErrorReturned);
 	printf("ERROR: Test1x should be terminated but isn't.\n");
 }                                                  // End of test1x 
+
+void mySuccessExpected(INT32 ErrorCode, char sys_call[]) {
+	if (ErrorCode != ERR_SUCCESS) {
+		printf("An Error should NOT have occurred.\n");
+		printf("????: Error( %d ) occurred in (%s)\n", ErrorCode, sys_call);
+	}
+	else
+		printf("Program correctly returned success.\n");
+
+}                      // End of SuccessExpected
