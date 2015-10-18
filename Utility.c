@@ -120,7 +120,6 @@ void unlockSP() {
 		&LockResult);
 }
 
-#define PRINTSTATES 1  //1 to print states; 0 to hide states
 //This function prints current States of:
 //1. Ready Queue. 2. Timer Queue. 3. PCB suspended 4. PCB message suspended
 //5. PCBs currently running in Multiprocessor mode
@@ -225,40 +224,60 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 //This function returns relavent test pointer regarding to command line
 //input information
 long *TestParser(char *TestInput){
+	if (strcmp(TestInput, "test0") == 0){
+		PRINTSTATES = 0;
+		return (long *)test0;
+	}
 	if (strcmp(TestInput, "test1a") == 0){
+		PRINTSTATES = 0;
 		return (long *)test1a;
 	}
 	else if (strcmp(TestInput, "test1b") == 0){
+		PRINTSTATES = 0;
 		return (long *)test1b;
 	}
 	else if (strcmp(TestInput, "test1c") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1c;
 	}
 	else if (strcmp(TestInput, "test1d") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1d;
 	}
 	else if (strcmp(TestInput, "test1e") == 0){
+		PRINTSTATES = 0;
 		return (long *)test1e;
 	}
 	else if (strcmp(TestInput, "test1f") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1f;
 	}
+	else if (strcmp(TestInput, "test1g") == 0){
+		PRINTSTATES = 0;
+		return (long *)test1g;
+	}
 	else if (strcmp(TestInput, "test1h") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1h;
 	}
 	else if (strcmp(TestInput, "test1i") == 0){
+		PRINTSTATES = 0;
 		return (long *)test1i;
 	}
 	else if (strcmp(TestInput, "test1j") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1j;
 	}
 	else if (strcmp(TestInput, "test1k") == 0){
+		PRINTSTATES = 0;
 		return (long *)test1k;
 	}
 	else if (strcmp(TestInput, "test1myTest") == 0){
+		PRINTSTATES = 1;
 		return (long *)test1myTest;
 	}
 	else{
+		PRINTSTATES = 1;
 		return test1c;
 	}
 }
