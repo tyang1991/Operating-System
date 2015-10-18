@@ -31,6 +31,7 @@
 #include             "queue.h"
 #include             "Control.h"
 #include             "Utility.h"
+#include             "MyTest.h"
 
 //  Allows the OS and the hardware to agree on where faults occur
 extern void *TO_VECTOR[];
@@ -134,6 +135,10 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	//for SLEEP
 	long Sleep_Time;
 	struct Process_Control_Block *sleepPCB;
+	//for RESTART_PROCESS
+	long PID_restart;
+	struct Process_Control_Block *restartPCB;
+	struct Process_Control_Block *recreatedPCB;
 	//for CREATE_PROCESS
 	struct Process_Control_Block *newPCB;
 	//for TERMINATE_PROCESS
@@ -251,7 +256,38 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				OSSuspendCurrentProcess();
 			}
 			break;
-		//terminate a process
+			//restart a PCB by terminate itself and created a new PCB with everything the same except PID
+		case SYSNUM_RESTART_PROCESS:
+			//initial return error
+			*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+			PID_restart = (long)SystemCallData->Argument[0];
+			//if not restart itself
+			if (PID_restart != CurrentPID()){
+				//find restarted PCB
+				restartPCB = findPCBbyProcessID(PID_restart);
+				//if PCB found, terminate itself and create a new one
+				if (restartPCB != NULL){
+					TerminateProcess(restartPCB);
+					recreatedPCB = OSCreateProcess(restartPCB->ProcessName, restartPCB->TestToRun,
+						restartPCB->Priority, SystemCallData->Argument[1], SystemCallData->Argument[2]);
+					//if create successfully, put it into PCB table and ready queue
+					if (recreatedPCB != NULL) {
+						*SystemCallData->Argument[2] = ERR_SUCCESS;
+						SchedularPrinter("Create", recreatedPCB->ProcessID);//print states
+						enPCBTable(recreatedPCB);
+						enReadyQueue(recreatedPCB);
+						SchedularPrinter("Restart", restartPCB->ProcessID);
+					}
+				}
+				else{
+					*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+				}
+			}
+			else{
+				*SystemCallData->Argument[2] = ERR_BAD_PARAM;
+			}
+			break;
+			//terminate a process
 		case SYSNUM_TERMINATE_PROCESS:
 			termPID = (long)SystemCallData->Argument[0];
 			//if PID = -1, terminate current running PCB
@@ -527,7 +563,7 @@ void osInit(int argc, char *argv[]) {
 
 	long ErrorReturned;
 	long newPID;
-	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", test1j, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
+	struct Process_Control_Block *newPCB = OSCreateProcess((long*)"test1", TestToRun, (long*)3, (long*)&newPID, (long*)&ErrorReturned);
 	if (newPCB != NULL) {
 		enPCBTable(newPCB);
 		enReadyQueue(newPCB);

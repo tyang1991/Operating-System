@@ -16,6 +16,7 @@ void Dispatcher_Uniprocessor();
 void Dispatcher_Multiprocessor();
 void OSStartProcess_Only(struct Process_Control_Block* PCB);
 void OSSuspendCurrentProcess();
+void OSTerminateCurrentProcess_Only();
 struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, long *priority, long *ProcessID, long *ErrorReturned);
 void OSStartProcess(struct Process_Control_Block* PCB);
 void SuspendProcess();

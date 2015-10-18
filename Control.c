@@ -160,11 +160,26 @@ void OSSuspendCurrentProcess() {
 	MEM_WRITE(Z502Context, &mmio);     // Start up the context
 }
 
+//In multiprocessor mode
+//This function is used to terminate current running PCB
+void OSTerminateCurrentProcess_Only(){
+	MEMORY_MAPPED_IO mmio;
+	pcbTable->Cur_Running_Number -= 1;
+	struct Process_Control_Block* PCB = CurrentPCB();
+	//set PCB state
+	PCB->ProcessState = PCB_STATE_TERMINATE;
+
+	mmio.Mode = Z502StartContext;
+	mmio.Field1 = 0;
+	mmio.Field2 = SUSPEND_CURRENT_CONTEXT_ONLY;
+	MEM_WRITE(Z502Context, &mmio);     // Start up the context
+}
+
 #define MAX_PCB_NUMBER 10 //limit number of PCB created
 
 //This function creates and returns a PCB
-struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run, 
-							long *Priority, long *ProcessID, long *ErrorReturned){
+struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_Run,
+	long *Priority, long *ProcessID, long *ErrorReturned){
 	//check input
 	//if bad inputs checked, return NULL and error
 	if ((int)Priority < 0){
@@ -198,12 +213,13 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	//pass PCB information into PCB created
 	newPCB->ContextID = mmio.Field1;
 	newPCB->Priority = (int)Priority;
-	newPCB->ProcessID = pcbTable->Element_Number ;
-	char* newProcessName = (char*)calloc(sizeof(char),16);
+	newPCB->ProcessID = pcbTable->Element_Number;
+	char* newProcessName = (char*)calloc(sizeof(char), 16);
 	strcpy(newProcessName, (char*)ProcessName);
 	newPCB->ProcessName = newProcessName;
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
+	newPCB->TestToRun = Test_To_Run;
 	*ProcessID = newPCB->ProcessID;
 
 	//return the PCB created
@@ -237,7 +253,7 @@ void TerminateProcess(struct Process_Control_Block *PCB) {
 		PCB->ProcessState = PCB_STATE_TERMINATE;
 		pcbTable->Terminated_Number += 1;
 		//terminate if more than one runnable PCBs, otherwise halt
-		if (PCBLiveNumber() > 1) {
+		if (PCBLiveNumber() >= 1) {
 			//do more actions when terminating current PCB
 			if (PCB == CurrentPCB()) {
 				//if uniprocessor, start a new PCB
@@ -246,13 +262,16 @@ void TerminateProcess(struct Process_Control_Block *PCB) {
 				}
 				//if multiprocessor, suspend itself
 				else {
-					OSSuspendCurrentProcess();
+					OSTerminateCurrentProcess_Only();
 				}
 			}
 		}
 		else {
 			HaltProcess();
 		}
+	}
+	else{
+		printf("Error: Terminate Failed\n");
 	}
 }
 
