@@ -142,8 +142,9 @@ void SchedularPrinter(char *TargetAction, int TargetPID) {
 		SPData.TargetPID = TargetPID;
 
 		//pass current running PID in uniprocessor mode
-//		struct Process_Control_Block *PCB = CurrentPCB();
-//		SPData.CurrentlyRunningPID = PCB->ProcessID;
+		if (ProcessorMode == Uniprocessor){
+			SPData.CurrentlyRunningPID = currentPCB->ProcessID;
+		}
 		SPData.NumberOfRunningProcesses = 1;
 
 		//PCB on Ready Queue

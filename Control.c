@@ -230,6 +230,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 //This function starts a PCB and suspend others
 void OSStartProcess(struct Process_Control_Block* PCB){
 	MEMORY_MAPPED_IO mmio;
+	currentPCB = PCB;
 
 	mmio.Mode = Z502StartContext;
 	mmio.Field1 = PCB->ContextID;

@@ -30,10 +30,11 @@ INT32 LockResult;
 #define PCB_LOCATION_TIMER_QUEUE 2L     //PCB in timer queue
 
 //global data structures
-struct PCB_Table *pcbTable;             //PCB table
-struct Timer_Queue *timerQueue;         //timer queue
-struct Ready_Queue *readyQueue;         //ready queue
-struct Message_Table *messageTable;     //message table
+struct PCB_Table *pcbTable;               //PCB table
+struct Timer_Queue *timerQueue;           //timer queue
+struct Ready_Queue *readyQueue;           //ready queue
+struct Message_Table *messageTable;       //message table
+struct Process_Control_Block *currentPCB; //current running PCB
 
 /*********************PCB Table************************/
 //PCB Table is a linded list, PCB is only allowed to
