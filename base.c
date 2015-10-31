@@ -268,8 +268,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 				//if PCB found, terminate itself and create a new one
 				if (restartPCB != NULL){
 					TerminateProcess(restartPCB);
-					recreatedPCB = OSCreateProcess(restartPCB->ProcessName, restartPCB->TestToRun,
-						restartPCB->Priority, SystemCallData->Argument[1], SystemCallData->Argument[2]);
+					recreatedPCB = OSCreateProcess((long*)restartPCB->ProcessName, restartPCB->TestToRun,
+						(long*)restartPCB->Priority, SystemCallData->Argument[1], SystemCallData->Argument[2]);
 					//if create successfully, put it into PCB table and ready queue
 					if (recreatedPCB != NULL) {
 						*SystemCallData->Argument[2] = ERR_SUCCESS;
@@ -556,7 +556,7 @@ void osInit(int argc, char *argv[]) {
 			ProcessorMode = Multiprocessor;
 			break;
 		default:
-			TestToRun = test1c;
+			TestToRun = (long*)test1c;
 			ProcessorMode = Uniprocessor;
 			break;
 	}

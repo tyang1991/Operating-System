@@ -1,5 +1,7 @@
 #include "global.h"
 #include "syscalls.h"
+#include "stdlib.h"
+#include "protos.h"
 
 #define         PRIORITY1C              10
 void test1xx(void);

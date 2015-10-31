@@ -4,6 +4,9 @@
 #include "queue.h"
 #include "Control.h"
 #include "Utility.h"
+#include "protos.h"
+#include "stdlib.h"
+#include "string.h"
 
 /*******************************Current State*********************************/
 //These functions returns current information

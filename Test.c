@@ -1506,7 +1506,7 @@ void test2f(void) {
 
 
 		// Record in our data-base that we've accessed this page
-		mtr->page_touched[(short)Loops] = PageNumber;
+		mtr->page_touched[(short)Loops] = (INT16)PageNumber;
 		Test2f_Statistics(OurProcessID);
 
 	}   // End of for Loops

@@ -5,6 +5,9 @@
 #include "syscalls.h"
 #include "global.h"
 #include "Utility.h"
+#include "stdlib.h"
+#include "protos.h"
+
 /*********************PCB Table************************/
 //initialize PCB Table
 void initPCBTable(){
