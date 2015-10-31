@@ -50,6 +50,7 @@ struct Process_Control_Block  {
 	long         WakeUpTime;
 	int          Priority;
 	long*        TestToRun;
+	void*        PageTableAddress;
 };
 //PCB table element
 struct PCB_Table_Element {

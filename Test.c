@@ -1138,8 +1138,8 @@ void test2b(void) {
 	printf("\n\nRelease %s:Test 2b: Pid %ld\n", CURRENT_REL, OurProcessID);
 
 	// Try a simple memory write
-	FirstMemoryAddress = 5 * PGSIZE;
-	FirstDataWritten = FirstMemoryAddress + OurProcessID + 7;
+	FirstMemoryAddress = 5 * PGSIZE;//80
+	FirstDataWritten = FirstMemoryAddress + OurProcessID + 7;//87
 	MEM_WRITE(FirstMemoryAddress, &FirstDataWritten);
 
 	// Loop through all the memory addresses defined in the array

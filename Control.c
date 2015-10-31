@@ -223,6 +223,7 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
 	newPCB->TestToRun = Test_To_Run;
+	newPCB->PageTableAddress = PageTable;
 	*ProcessID = newPCB->ProcessID;
 
 	//return the PCB created

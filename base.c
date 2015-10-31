@@ -101,9 +101,11 @@ void FaultHandler(void) {
 	printf("Fault_handler: Found vector type %d with value %d\n", DeviceID,
 			Status);
 	/*****************************My Code******************************/
-	//temperary code for test1k
-	HaltProcess();
-	
+	struct Process_Control_Block *currentPCB = CurrentPCB();
+	INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
+	currentPageTable[Status] = currentPageTable[Status] | 0x8000;
+
+
 	/******************************************************************/
 
 	// Clear out this device - we're done with it
