@@ -379,6 +379,7 @@ void initMemory() {
 
 int NewPageTable() {
 	if (NewPTNumber == 0) {
+		NewPTNumber = 1;
 		return 0;
 	}
 	else {
