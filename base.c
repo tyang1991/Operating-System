@@ -101,10 +101,15 @@ void FaultHandler(void) {
 	printf("Fault_handler: Found vector type %d with value %d\n", DeviceID,
 			Status);
 	/*****************************My Code******************************/
-	struct Process_Control_Block *currentPCB = CurrentPCB();
-	INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
-	currentPageTable[Status] = currentPageTable[Status] | 0x8000;
-
+	if (Status >= 0 && Status <= 1023) {
+		struct Process_Control_Block *currentPCB = CurrentPCB();
+		INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
+		currentPageTable[Status] = currentPageTable[Status] + NewPageTable();
+		currentPageTable[Status] = currentPageTable[Status] | 0x8000;
+	}
+	else {
+		HaltProcess();
+	}
 
 	/******************************************************************/
 
@@ -498,6 +503,8 @@ void osInit(int argc, char *argv[]) {
 	initReadyQueue();
 	initMessageTable();
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
+	//init memory
+	initMemory();
 
   // Demonstrates how calling arguments are passed thru to here       
 

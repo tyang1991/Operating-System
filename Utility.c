@@ -284,6 +284,10 @@ long *TestParser(char *TestInput){
 		PRINTSTATES = 0;
 		return (long *)test2b;
 	}
+	else if (strcmp(TestInput, "test2c") == 0) {
+		PRINTSTATES = 0;
+		return (long *)test2c;
+	}
 	else{
 		PRINTSTATES = 1;
 		return (long *)test1c;

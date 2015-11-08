@@ -371,3 +371,19 @@ void unlockTimer() {
 		&LockResult);
 }
 /*****************************************************************************/
+
+/******************************Memory Control*********************************/
+void initMemory() {
+	NewPTNumber = 0;
+}
+
+int NewPageTable() {
+	if (NewPTNumber == 0) {
+		return 0;
+	}
+	else {
+		NewPTNumber = NewPTNumber + 1;
+		return NewPTNumber - 1;
+	}
+}
+/*****************************************************************************/
