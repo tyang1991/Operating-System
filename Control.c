@@ -404,11 +404,6 @@ void DiskRead(long DiskID, long Sector, char *DataRead) {
 	mmio.Field2 = Sector;
 	mmio.Field3 = (long)DataRead;
 	MEM_WRITE(Z502Disk, &mmio);
-
-	while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
-
-	printf("DiskID: %d. Sector: %d.\n", DiskID, Sector);
-	printf("DataRead: %d, %d, %d, %d\n", ((int*)DataRead)[0], ((int*)DataRead)[1], ((int*)DataRead)[2], ((int*)DataRead)[3]);
 }
 
 int DiskStatus(long DiskID) {

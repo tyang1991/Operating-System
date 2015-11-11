@@ -187,6 +187,11 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	long *ActualSourcePID;
 	long *ErrorReturned_ReceiveMessage;
 	struct Process_Control_Block *Mess_PCB;
+	//for DISK_WRITTEN & DISK_READ
+	long DiskID;
+	long Sector;
+	char *DataWritten;
+	char *DataRead;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -488,14 +493,22 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			SchedularPrinter("ReceiveMsg", CurrentPID());
 			break;
 		case SYSNUM_DISK_WRITE:
-			while (DiskStatus((long)SystemCallData->Argument[0]) == DEVICE_IN_USE) {}
-			DiskWrite((long)SystemCallData->Argument[0], (long)SystemCallData->Argument[1],
-				(char *)SystemCallData->Argument[2]);
+			DiskID = (long)SystemCallData->Argument[0];
+			Sector = (long)SystemCallData->Argument[1];
+			DataWritten = (char *)SystemCallData->Argument[2];
+
+			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
+			DiskWrite(DiskID, Sector, DataWritten);
+			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
 			break;
 		case SYSNUM_DISK_READ:
-			while (DiskStatus((long)SystemCallData->Argument[0]) == DEVICE_IN_USE) {}
-			DiskRead((long)SystemCallData->Argument[0], (long)SystemCallData->Argument[1],
-				(char *)SystemCallData->Argument[2]);
+			DiskID = (long)SystemCallData->Argument[0];
+			Sector = (long)SystemCallData->Argument[1];
+			DataRead = (char *)SystemCallData->Argument[2];
+
+			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
+			DiskRead(DiskID, Sector, DataRead);
+			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
