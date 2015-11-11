@@ -387,4 +387,42 @@ int NewPageTable() {
 		return NewPTNumber - 1;
 	}
 }
+
+void DiskWrite(long DiskID, long Sector, char *DataWritten) {
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	mmio.Mode = Z502DiskWrite;
+	mmio.Field1 = DiskID;   // You pick the time units
+	mmio.Field2 = Sector;
+	mmio.Field3 = (long)DataWritten;
+	MEM_WRITE(Z502Disk, &mmio);
+}
+
+void DiskRead(long DiskID, long Sector, char *DataRead) {
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	mmio.Mode = Z502DiskRead;
+	mmio.Field1 = DiskID;   // You pick the time units
+	mmio.Field2 = Sector;
+	mmio.Field3 = (long)DataRead;
+	MEM_WRITE(Z502Disk, &mmio);
+
+	while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
+
+	printf("DiskID: %d. Sector: %d.\n", DiskID, Sector);
+	printf("DataRead: %d, %d, %d, %d\n", ((int*)DataRead)[0], ((int*)DataRead)[1], ((int*)DataRead)[2], ((int*)DataRead)[3]);
+}
+
+int DiskStatus(long DiskID) {
+	MEMORY_MAPPED_IO mmio;    //for hardware interface
+	mmio.Mode = Z502Status;
+	mmio.Field1 = DiskID;   // You pick the time units
+	MEM_WRITE(Z502Disk, &mmio);
+
+	if (mmio.Field4 == ERR_SUCCESS) {
+		return mmio.Field2;
+	}
+	else {
+		printf("Fail: Read Status./n");
+		return 0;
+	}
+}
 /*****************************************************************************/

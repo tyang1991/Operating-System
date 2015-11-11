@@ -1216,7 +1216,7 @@ void test2c(void) {
 		DataWritten->int_data[1] = CheckValue;
 		DataWritten->int_data[2] = Sector;
 		DataWritten->int_data[3] = (int)OurProcessID;
-		//printf( "Test2c - Pid = %d, Writing from Addr = %X\n", (int)OurProcessID, (unsigned int )(DataWritten->char_data));
+		printf( "Test2c - Pid = %d, Writing from Addr = %X\n", (int)OurProcessID, (unsigned int )(DataWritten->char_data));
 		DISK_WRITE(DiskID, Sector, (char*)(DataWritten->char_data));
 
 		// Now read back the same data.  Note that we assume the
@@ -1280,7 +1280,7 @@ void test2c(void) {
 		}
 
 	}   // End of for loop
-
+	
 	GET_TIME_OF_DAY(&CurrentTime);
 	printf("TEST2C:    PID %ld, Ends at Time %ld\n", OurProcessID, CurrentTime);
 	TERMINATE_PROCESS(-1, &ErrorReturned);

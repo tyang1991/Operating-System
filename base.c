@@ -49,6 +49,7 @@ char *call_names[] = { "mem_read ", "mem_write", "read_mod ", "get_time ",
 void InterruptHandler(void) {
 	INT32 DeviceID;
 //	INT32 Status;
+	struct Process_Control_Block *tmpPCB;//TIMER_INTERRUPT
 
 	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
 
@@ -63,14 +64,21 @@ void InterruptHandler(void) {
 	//Status = mmio.Field2;
 
 /////////////////////////Code go here////////////////////////////////////
+	switch (DeviceID) {
+		case TIMER_INTERRUPT:
+			//take all timeout PCB from timer queue and put into ready queue
+			do {
+				tmpPCB = deTimerQueue();
+				enReadyQueue(tmpPCB);
+			} while (ResetTimer() == 0);
+			break;
+		case DISK_INTERRUPT:
+			printf("DISK_INTERRUPT\n");
+			break;
+		default:
 
-	//take all timeout PCB from timer queue and put into ready queue
-	struct Process_Control_Block *tmpPCB;
-
-	do{
-		tmpPCB = deTimerQueue();
-		enReadyQueue(tmpPCB);
-	} while (ResetTimer() == 0);
+			break;
+	}
 
 /////////////////////////Code end here///////////////////////////////////
 	
@@ -478,6 +486,16 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Mess_PCB->ProcessState = PCB_STATE_LIVE;
 			pcbTable->Msg_Suspended_Number -= 1;
 			SchedularPrinter("ReceiveMsg", CurrentPID());
+			break;
+		case SYSNUM_DISK_WRITE:
+			while (DiskStatus((long)SystemCallData->Argument[0]) == DEVICE_IN_USE) {}
+			DiskWrite((long)SystemCallData->Argument[0], (long)SystemCallData->Argument[1],
+				(char *)SystemCallData->Argument[2]);
+			break;
+		case SYSNUM_DISK_READ:
+			while (DiskStatus((long)SystemCallData->Argument[0]) == DEVICE_IN_USE) {}
+			DiskRead((long)SystemCallData->Argument[0], (long)SystemCallData->Argument[1],
+				(char *)SystemCallData->Argument[2]);
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");
