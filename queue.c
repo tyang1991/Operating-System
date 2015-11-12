@@ -520,3 +520,12 @@ void unlockMessageTable() {
 	READ_MODIFY(MEMORY_INTERLOCK_MESSAGE_TABLE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
 		&LockResult);
 }
+
+/*******************************************************/
+
+/************************Disk***************************/
+void initDiskTable() {
+	DiskTable = (struct Disk_Table*)malloc(sizeof(struct Disk_Table));
+}
+
+/*******************************************************/

@@ -35,6 +35,7 @@ struct Timer_Queue *timerQueue;           //timer queue
 struct Ready_Queue *readyQueue;           //ready queue
 struct Message_Table *messageTable;       //message table
 struct Process_Control_Block *currentPCB; //current running PCB
+struct Disk_Table *DiskTable;              //Disk Table
 
 /*********************PCB Table************************/
 //PCB Table is a linded list, PCB is only allowed to
@@ -155,3 +156,20 @@ int findMessage(long Source_PID, char *ReceiveBuffer, long ReceiveLength,
 void lockMessageTable();
 void unlockMessageTable();
 /*******************************************************/
+
+/**********************DISK*****************************/
+struct DISK_OP {
+	int Disk_Operation;
+	long DiskID;
+	long Sector;
+	char *Data;
+	struct Message_Table_Element *PCB;
+	struct DISK_OP *Prev_Element;
+	struct DISK_OP *Next_Element;
+};
+
+struct Disk_Table{
+	struct DISK_OP *Disk_Op[MAX_NUMBER_OF_DISKS+1];
+};
+
+void initDiskTable();

@@ -533,6 +533,7 @@ void osInit(int argc, char *argv[]) {
 	initTimerQueue();
 	initReadyQueue();
 	initMessageTable();
+	initDiskTable();
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	//init memory
 	initMemory();
