@@ -526,6 +526,50 @@ void unlockMessageTable() {
 /************************Disk***************************/
 void initDiskTable() {
 	DiskTable = (struct Disk_Table*)malloc(sizeof(struct Disk_Table));
+	for (int i = 0; i < MAX_NUMBER_OF_DISKS + 1; i++) {
+		DiskTable->Disk_Number[i] = NULL;
+	}
 }
 
+struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, int PID) {
+	struct DISK_OP *newDiskOp = (struct DISK_OP*)malloc(sizeof(struct DISK_OP));
+	newDiskOp->Disk_Operation = DiskOp;
+	newDiskOp->DiskID = DiskID;
+	newDiskOp->Sector = Sector;
+	newDiskOp->Data = Data;
+	newDiskOp->PID = PID;
+
+	return newDiskOp;
+}
+
+void enDiskQueue(struct DISK_OP *DiskOp) {
+	lockDiskQueue();
+
+	struct Disk_Table_Element *newElement = (struct Disk_Table_Element*)malloc(sizeof(struct Disk_Table_Element));
+	newElement->Disk_Op = DiskOp;
+
+	if (DiskTable->Disk_Number[DiskOp->DiskID] == NULL) {
+		newElement->Prev_Element = newElement;
+		newElement->Next_Element = newElement;
+		DiskTable->Disk_Number[DiskOp->DiskID] = newElement;
+	}
+	else {
+		newElement->Prev_Element = DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element;
+		newElement->Next_Element = DiskTable->Disk_Number[DiskOp->DiskID];
+		DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element->Next_Element = newElement;
+		DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element = newElement;
+	}
+
+	unlockDiskQueue();
+}
+
+void lockDiskQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_DISK_QUEUE, DO_LOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+}
+
+void unlockDiskQueue() {
+	READ_MODIFY(MEMORY_INTERLOCK_DISK_QUEUE, DO_UNLOCK, SUSPEND_UNTIL_LOCKED,
+		&LockResult);
+}
 /*******************************************************/

@@ -16,6 +16,7 @@ INT32 LockResult;
 #define      MEMORY_INTERLOCK_MESSAGE_TABLE   MEMORY_INTERLOCK_TIMER_QUEUE+1      //Message Table
 #define      MEMORY_INTERLOCK_TIMER           MEMORY_INTERLOCK_MESSAGE_TABLE+1    //Timer
 #define      MEMORY_INTERLOCK_PRINTER         MEMORY_INTERLOCK_TIMER+1            //Scheduler Printer
+#define      MEMORY_INTERLOCK_DISK_QUEUE      MEMORY_INTERLOCK_PRINTER+1          //Disk Queue
 
 //PCB states
 #define PCB_STATE_LIVE 0L               //initial PCB state when created
@@ -163,13 +164,20 @@ struct DISK_OP {
 	long DiskID;
 	long Sector;
 	char *Data;
-	struct Message_Table_Element *PCB;
-	struct DISK_OP *Prev_Element;
-	struct DISK_OP *Next_Element;
+	int PID;
+};
+
+struct Disk_Table_Element {
+	struct DISK_OP *Disk_Op;
+	struct Disk_Table_Element *Prev_Element;
+	struct Disk_Table_Element *Next_Element;
 };
 
 struct Disk_Table{
-	struct DISK_OP *Disk_Op[MAX_NUMBER_OF_DISKS+1];
+	struct Disk_Table_Element *Disk_Number[MAX_NUMBER_OF_DISKS+1];
 };
 
 void initDiskTable();
+struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, int PID);
+void lockDiskQueue();
+void unlockDiskQueue();
