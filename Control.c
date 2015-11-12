@@ -420,4 +420,13 @@ int DiskStatus(long DiskID) {
 		return 0;
 	}
 }
+
+void ClearInterruptStatus(long DeviceID) {
+	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
+	// Clear out this device - we're done with it
+	mmio.Mode = Z502ClearInterruptStatus;
+	mmio.Field1 = DeviceID;
+	mmio.Field2 = mmio.Field3 = 0;
+	MEM_WRITE(Z502InterruptDevice, &mmio);
+}
 /*****************************************************************************/
