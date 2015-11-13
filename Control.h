@@ -38,6 +38,7 @@ int NewPTNumber;
 
 void initMemory();
 int NewPageTable();
+void StartDiskOp(struct DISK_OP *DiskOp);
 void DiskWrite(long DiskID, long Sector, char *DataWritten);
 void DiskRead(long DiskID, long Sector, char *DataRead);
 int DiskStatus(long DiskID);

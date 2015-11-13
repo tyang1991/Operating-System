@@ -185,6 +185,7 @@ struct Disk_Queue{
 
 void initDiskQueue();
 struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, struct Process_Control_Block *PCB);
-struct DISK_OP *deDiskQueue(long DiskID);
+void enDiskQueue(struct DISK_OP *DiskOp);
+struct Process_Control_Block *deDiskQueue(long DiskID);
 void lockDiskQueue();
 void unlockDiskQueue();

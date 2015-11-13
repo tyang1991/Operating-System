@@ -49,7 +49,8 @@ char *call_names[] = { "mem_read ", "mem_write", "read_mod ", "get_time ",
 void InterruptHandler(void) {
 	INT32 DeviceID;
 //	INT32 Status;
-	struct Process_Control_Block *tmpPCB;//TIMER_INTERRUPT
+	struct Process_Control_Block *tmpPCB;
+	long DiskID;
 
 	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
 
@@ -71,9 +72,16 @@ void InterruptHandler(void) {
 			enReadyQueue(tmpPCB);
 		} while (ResetTimer() == 0);
 	}
-	else if (DeviceID == DISK_INTERRUPT){
+	else if (DeviceID >= DISK_INTERRUPT && DeviceID <= DISK_INTERRUPT+7){
 		//Disk ID from 1 to 8, disk interrupt from 5+0 to 5+7
-		printf("DISK_INTERRUPT: %d\n", DeviceID-5);
+		DiskID = DeviceID - DISK_INTERRUPT + 1;
+		printf("DISK_INTERRUPT: DiskID %d\n", DiskID);
+		tmpPCB = deDiskQueue(DiskID);
+		enReadyQueue(tmpPCB);
+		if (diskQueue->Disk_Number[DiskID] != NULL) {
+			StartDiskOp(diskQueue->Disk_Number[DiskID]->Disk_Op);
+		}
+
 	}
 	else {
 		printf("Error: INTERRUPT not recognized\n");
@@ -187,6 +195,7 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 	long Sector;
 	char *DataWritten;
 	char *DataRead;
+	struct DISK_OP *newDiskOp;
 
 	call_type = (short) SystemCallData->SystemCallNumber;
 	if (do_print > 0) {
@@ -492,18 +501,30 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Sector = (long)SystemCallData->Argument[1];
 			DataWritten = (char *)SystemCallData->Argument[2];
 
-			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
-			DiskWrite(DiskID, Sector, DataWritten);
-			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
+			newDiskOp = CreateDiskOp(DISK_OPERATION_WRITE, DiskID, Sector,
+				DataWritten, CurrentPCB());
+			enDiskQueue(newDiskOp);
+
+			if (DiskStatus(DiskID) != DEVICE_IN_USE) {
+				StartDiskOp(newDiskOp);
+			}
+
+			Dispatcher();
 			break;
 		case SYSNUM_DISK_READ:
 			DiskID = (long)SystemCallData->Argument[0];
 			Sector = (long)SystemCallData->Argument[1];
 			DataRead = (char *)SystemCallData->Argument[2];
 
-			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
-			DiskRead(DiskID, Sector, DataRead);
-			while (DiskStatus(DiskID) == DEVICE_IN_USE) {}
+			newDiskOp = CreateDiskOp(DISK_OPERATION_READ, DiskID, Sector,
+				DataRead, CurrentPCB());
+			enDiskQueue(newDiskOp);
+
+			if (DiskStatus(DiskID) != DEVICE_IN_USE) {
+				StartDiskOp(newDiskOp);
+			}
+
+			Dispatcher();
 			break;
 		default:
 			printf("ERROR!  call_type not recognized!\n");

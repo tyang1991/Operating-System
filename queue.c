@@ -563,16 +563,16 @@ void enDiskQueue(struct DISK_OP *DiskOp) {
 	unlockDiskQueue();
 }
 
-struct DISK_OP *deDiskQueue(long DiskID) {
+struct Process_Control_Block *deDiskQueue(long DiskID) {
 	lockDiskQueue();
 
-	struct DISK_OP *returnedDiskOp;
+	struct Process_Control_Block *returnedDiskOp;
 
 	if (diskQueue->Disk_Number[DiskID] == NULL) {
 		returnedDiskOp = NULL;
 	}
 	else {
-		returnedDiskOp = diskQueue->Disk_Number[DiskID]->Disk_Op;
+		returnedDiskOp = diskQueue->Disk_Number[DiskID]->Disk_Op->PCB;
 
 		if (diskQueue->Disk_Number[DiskID]->Next_Element == diskQueue->Disk_Number[DiskID]) {
 			diskQueue->Disk_Number[DiskID] = NULL;
