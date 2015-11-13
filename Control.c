@@ -388,6 +388,15 @@ int NewPageTable() {
 	}
 }
 
+void StartDiskOp(struct DISK_OP *DiskOp) {
+	if (DiskOp->Disk_Operation == DISK_OPERATION_WRITE) {
+		DiskWrite(DiskOp->DiskID, DiskOp->Sector, DiskOp->Data);
+	}
+	else {
+		DiskRead(DiskOp->DiskID, DiskOp->Sector, DiskOp->Data);
+	}
+}
+
 void DiskWrite(long DiskID, long Sector, char *DataWritten) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	mmio.Mode = Z502DiskWrite;

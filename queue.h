@@ -30,13 +30,17 @@ INT32 LockResult;
 #define PCB_LOCATION_READY_QUEUE 1L     //PCB in ready queue
 #define PCB_LOCATION_TIMER_QUEUE 2L     //PCB in timer queue
 
+//Disk Operation
+#define DISK_OPERATION_WRITE 0          //Disk Write
+#define DISK_OPERATION_READ  1          //Disk Read
+
 //global data structures
 struct PCB_Table *pcbTable;               //PCB table
 struct Timer_Queue *timerQueue;           //timer queue
 struct Ready_Queue *readyQueue;           //ready queue
 struct Message_Table *messageTable;       //message table
 struct Process_Control_Block *currentPCB; //current running PCB
-struct Disk_Table *DiskTable;              //Disk Table
+struct Disk_Queue *diskQueue;              //Disk Table
 
 /*********************PCB Table************************/
 //PCB Table is a linded list, PCB is only allowed to
@@ -159,25 +163,28 @@ void unlockMessageTable();
 /*******************************************************/
 
 /**********************DISK*****************************/
+
+
 struct DISK_OP {
 	int Disk_Operation;
 	long DiskID;
 	long Sector;
 	char *Data;
-	int PID;
+	struct Process_Control_Block *PCB;
 };
 
-struct Disk_Table_Element {
+struct Disk_Queue_Element {
 	struct DISK_OP *Disk_Op;
-	struct Disk_Table_Element *Prev_Element;
-	struct Disk_Table_Element *Next_Element;
+	struct Disk_Queue_Element *Prev_Element;
+	struct Disk_Queue_Element *Next_Element;
 };
 
-struct Disk_Table{
-	struct Disk_Table_Element *Disk_Number[MAX_NUMBER_OF_DISKS+1];
+struct Disk_Queue{
+	struct Disk_Queue_Element *Disk_Number[MAX_NUMBER_OF_DISKS+1];
 };
 
-void initDiskTable();
-struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, int PID);
+void initDiskQueue();
+struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, struct Process_Control_Block *PCB);
+struct DISK_OP *deDiskQueue(long DiskID);
 void lockDiskQueue();
 void unlockDiskQueue();

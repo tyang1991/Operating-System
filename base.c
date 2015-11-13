@@ -64,20 +64,19 @@ void InterruptHandler(void) {
 	//Status = mmio.Field2;
 
 /////////////////////////Code go here////////////////////////////////////
-	switch (DeviceID) {
-		case TIMER_INTERRUPT:
-			//take all timeout PCB from timer queue and put into ready queue
-			do {
-				tmpPCB = deTimerQueue();
-				enReadyQueue(tmpPCB);
-			} while (ResetTimer() == 0);
-			break;
-		case DISK_INTERRUPT:
-			printf("DISK_INTERRUPT\n");
-			break;
-		default:
-
-			break;
+	if (DeviceID == TIMER_INTERRUPT) {
+		//take all timeout PCB from timer queue and put into ready queue
+		do {
+			tmpPCB = deTimerQueue();
+			enReadyQueue(tmpPCB);
+		} while (ResetTimer() == 0);
+	}
+	else if (DeviceID == DISK_INTERRUPT){
+		//Disk ID from 1 to 8, disk interrupt from 5+0 to 5+7
+		printf("DISK_INTERRUPT: %d\n", DeviceID-5);
+	}
+	else {
+		printf("Error: INTERRUPT not recognized\n");
 	}
 
 /////////////////////////Code end here///////////////////////////////////
@@ -529,7 +528,7 @@ void osInit(int argc, char *argv[]) {
 	initTimerQueue();
 	initReadyQueue();
 	initMessageTable();
-	initDiskTable();
+	initDiskQueue();
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	//init memory
 	initMemory();

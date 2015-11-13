@@ -524,20 +524,20 @@ void unlockMessageTable() {
 /*******************************************************/
 
 /************************Disk***************************/
-void initDiskTable() {
-	DiskTable = (struct Disk_Table*)malloc(sizeof(struct Disk_Table));
+void initDiskQueue() {
+	diskQueue = (struct Disk_Queue*)malloc(sizeof(struct Disk_Queue));
 	for (int i = 0; i < MAX_NUMBER_OF_DISKS + 1; i++) {
-		DiskTable->Disk_Number[i] = NULL;
+		diskQueue->Disk_Number[i] = NULL;
 	}
 }
 
-struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, int PID) {
+struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, struct Process_Control_Block *PCB) {
 	struct DISK_OP *newDiskOp = (struct DISK_OP*)malloc(sizeof(struct DISK_OP));
 	newDiskOp->Disk_Operation = DiskOp;
 	newDiskOp->DiskID = DiskID;
 	newDiskOp->Sector = Sector;
 	newDiskOp->Data = Data;
-	newDiskOp->PID = PID;
+	newDiskOp->PCB = PCB;
 
 	return newDiskOp;
 }
@@ -545,22 +545,48 @@ struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, i
 void enDiskQueue(struct DISK_OP *DiskOp) {
 	lockDiskQueue();
 
-	struct Disk_Table_Element *newElement = (struct Disk_Table_Element*)malloc(sizeof(struct Disk_Table_Element));
+	struct Disk_Queue_Element *newElement = (struct Disk_Queue_Element*)malloc(sizeof(struct Disk_Queue_Element));
 	newElement->Disk_Op = DiskOp;
 
-	if (DiskTable->Disk_Number[DiskOp->DiskID] == NULL) {
+	if (diskQueue->Disk_Number[DiskOp->DiskID] == NULL) {
 		newElement->Prev_Element = newElement;
 		newElement->Next_Element = newElement;
-		DiskTable->Disk_Number[DiskOp->DiskID] = newElement;
+		diskQueue->Disk_Number[DiskOp->DiskID] = newElement;
 	}
 	else {
-		newElement->Prev_Element = DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element;
-		newElement->Next_Element = DiskTable->Disk_Number[DiskOp->DiskID];
-		DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element->Next_Element = newElement;
-		DiskTable->Disk_Number[DiskOp->DiskID]->Prev_Element = newElement;
+		newElement->Prev_Element = diskQueue->Disk_Number[DiskOp->DiskID]->Prev_Element;
+		newElement->Next_Element = diskQueue->Disk_Number[DiskOp->DiskID];
+		diskQueue->Disk_Number[DiskOp->DiskID]->Prev_Element->Next_Element = newElement;
+		diskQueue->Disk_Number[DiskOp->DiskID]->Prev_Element = newElement;
 	}
 
 	unlockDiskQueue();
+}
+
+struct DISK_OP *deDiskQueue(long DiskID) {
+	lockDiskQueue();
+
+	struct DISK_OP *returnedDiskOp;
+
+	if (diskQueue->Disk_Number[DiskID] == NULL) {
+		returnedDiskOp = NULL;
+	}
+	else {
+		returnedDiskOp = diskQueue->Disk_Number[DiskID]->Disk_Op;
+
+		if (diskQueue->Disk_Number[DiskID]->Next_Element == diskQueue->Disk_Number[DiskID]) {
+			diskQueue->Disk_Number[DiskID] = NULL;
+		}
+		else {
+			diskQueue->Disk_Number[DiskID] = diskQueue->Disk_Number[DiskID]->Next_Element;
+			diskQueue->Disk_Number[DiskID]->Prev_Element = diskQueue->Disk_Number[DiskID];
+			diskQueue->Disk_Number[DiskID]->Next_Element = diskQueue->Disk_Number[DiskID];
+		}
+	}
+
+	unlockDiskQueue();
+
+	return returnedDiskOp;
 }
 
 void lockDiskQueue() {
