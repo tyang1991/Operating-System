@@ -1379,8 +1379,8 @@ The addresses accessed are pseudo-random distributed in a non-uniform manner.
 
 **************************************************************************/
 
-#define         STEP_SIZE               VIRTUAL_MEM_PAGES/(4 * PHYS_MEM_PGS )
-#define         DISPLAY_GRANULARITY2e   16 * STEP_SIZE
+#define         STEP_SIZE               VIRTUAL_MEM_PAGES/(4 * PHYS_MEM_PGS )  //4
+#define         DISPLAY_GRANULARITY2e   16 * STEP_SIZE  //64
 #define         TOTAL_ITERATIONS        256
 
 void test2e(void) {

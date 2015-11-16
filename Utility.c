@@ -292,6 +292,22 @@ long *TestParser(char *TestInput){
 		PRINTSTATES = 0;
 		return (long *)test2d;
 	}
+	else if (strcmp(TestInput, "test2e") == 0) {
+		PRINTSTATES = 0;
+		return (long *)test2e;
+	}
+	else if (strcmp(TestInput, "test2f") == 0) {
+		PRINTSTATES = 0;
+		return (long *)test2f;
+	}
+	else if (strcmp(TestInput, "test2g") == 0) {
+		PRINTSTATES = 0;
+		return (long *)test2g;
+	}
+	else if (strcmp(TestInput, "test2h") == 0) {
+		PRINTSTATES = 0;
+		return (long *)test2h;
+	}
 	else{
 		PRINTSTATES = 1;
 		return (long *)test1c;

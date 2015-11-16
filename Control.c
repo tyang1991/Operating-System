@@ -377,7 +377,7 @@ void initMemory() {
 	NewPTNumber = 0;
 }
 
-int NewPageTable() {
+int NewFrameNumber() {
 	if (NewPTNumber == 0) {
 		NewPTNumber = 1;
 		return 0;

@@ -75,7 +75,7 @@ void InterruptHandler(void) {
 	else if (DeviceID >= DISK_INTERRUPT && DeviceID <= DISK_INTERRUPT+7){
 		//Disk ID from 1 to 8, disk interrupt from 5+0 to 5+7
 		DiskID = DeviceID - DISK_INTERRUPT + 1;
-		printf("DISK_INTERRUPT: DiskID %d\n", DiskID);
+//		printf("DISK_INTERRUPT: DiskID %d\n", DiskID);
 		tmpPCB = deDiskQueue(DiskID);
 		enReadyQueue(tmpPCB);
 		if (diskQueue->Disk_Number[DiskID] != NULL) {
@@ -115,7 +115,7 @@ void FaultHandler(void) {
 	if (Status >= 0 && Status <= 1023) {
 		struct Process_Control_Block *currentPCB = CurrentPCB();
 		INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
-		currentPageTable[Status] = currentPageTable[Status] + NewPageTable();
+		currentPageTable[Status] = currentPageTable[Status] + NewFrameNumber();
 		currentPageTable[Status] = currentPageTable[Status] | 0x8000;
 	}
 	else {
