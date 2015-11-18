@@ -112,16 +112,30 @@ void FaultHandler(void) {
 	printf("Fault_handler: Found vector type %d with value %d\n", DeviceID,
 			Status);
 	/*****************************My Code******************************/
-	if (Status >= 0 && Status <= 1023) {
-		struct Process_Control_Block *currentPCB = CurrentPCB();
-		INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
-		currentPageTable[Status] = currentPageTable[Status] + NewFrameNumber();
-		//write frame table ***
-		currentPageTable[Status] = currentPageTable[Status] | 0x8000;
-	}
-	else {
+	if (Status < 0 || Status >= 1024) {
 		HaltProcess();
 	}
+
+	//if Sbit = 1
+	//    get DiskID & Sector from ShadowPageTable
+	//    DISK_READ
+	//    Vbit = 0, Rbit = 1, Sbit = 0
+	//    MEM_WRITE
+
+	//if frames full
+	//    get victim frame when (Vbit = 1, Rbit = 0, Sbit = 0)
+	//    get free DiskID & Sector
+	//    DISK_WRITE
+	//    change victim's pageTable (Vbit = 0, Vbit = 1, Sbit = 1)
+	//    write victim's ShadowPageTable
+
+	//write frameTable(frame number, Vbit = 1, Rbit = 1, Sbit = 0)
+
+	struct Process_Control_Block *currentPCB = CurrentPCB();
+	INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
+	currentPageTable[Status] = currentPageTable[Status] + NewFrameNumber();
+	//write frame table ***
+	currentPageTable[Status] = currentPageTable[Status] | 0x8000;
 
 	/******************************************************************/
 
