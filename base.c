@@ -116,6 +116,7 @@ void FaultHandler(void) {
 		struct Process_Control_Block *currentPCB = CurrentPCB();
 		INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
 		currentPageTable[Status] = currentPageTable[Status] + NewFrameNumber();
+		//write frame table ***
 		currentPageTable[Status] = currentPageTable[Status] | 0x8000;
 	}
 	else {
