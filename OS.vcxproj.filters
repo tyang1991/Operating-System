@@ -30,9 +30,6 @@
     <ClCompile Include="Z502.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="queue.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Control.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MyTest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataStructure.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,9 +56,6 @@
     <ClInclude Include="z502.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="queue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Control.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -66,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MyTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DataStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

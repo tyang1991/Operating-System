@@ -73,7 +73,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MyTest.c" />
-    <ClCompile Include="queue.c" />
+    <ClCompile Include="DataStructure.c" />
     <ClCompile Include="base.c" />
     <ClCompile Include="sample.c" />
     <ClCompile Include="StatePrinter.c" />
@@ -85,7 +85,7 @@
   <ItemGroup>
     <ClInclude Include="Control.h" />
     <ClInclude Include="MyTest.h" />
-    <ClInclude Include="queue.h" />
+    <ClInclude Include="DataStructure.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="protos.h" />
     <ClInclude Include="syscalls.h" />

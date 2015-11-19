@@ -163,8 +163,6 @@ void unlockMessageTable();
 /*******************************************************/
 
 /**********************DISK*****************************/
-
-
 struct DISK_OP {
 	int Disk_Operation;
 	long DiskID;

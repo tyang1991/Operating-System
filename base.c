@@ -28,7 +28,7 @@
 #include             "protos.h"
 #include             "string.h"
 #include             <stdlib.h>
-#include             "queue.h"
+#include             "DataStructure.h"
 #include             "Control.h"
 #include             "Utility.h"
 #include             "MyTest.h"
@@ -120,14 +120,15 @@ void FaultHandler(void) {
 	//    get DiskID & Sector from ShadowPageTable
 	//    DISK_READ
 	//    Vbit = 0, Rbit = 1, Sbit = 0
-	//    MEM_WRITE
 
-	//if frames full
 	//    get victim frame when (Vbit = 1, Rbit = 0, Sbit = 0)
+	//    Z502ReadPhysicalMemory
 	//    get free DiskID & Sector
 	//    DISK_WRITE
 	//    change victim's pageTable (Vbit = 0, Vbit = 1, Sbit = 1)
 	//    write victim's ShadowPageTable
+
+	//    Z502WritePhysicalMemory
 
 	//write frameTable(frame number, Vbit = 1, Rbit = 1, Sbit = 0)
 

@@ -1,7 +1,7 @@
 #include "global.h"
 #include "stdio.h"
 #include "syscalls.h"
-#include "queue.h"
+#include "DataStructure.h"
 #include "Control.h"
 #include "Utility.h"
 #include "protos.h"
