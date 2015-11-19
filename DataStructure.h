@@ -40,7 +40,8 @@ struct Timer_Queue *timerQueue;           //timer queue
 struct Ready_Queue *readyQueue;           //ready queue
 struct Message_Table *messageTable;       //message table
 struct Process_Control_Block *currentPCB; //current running PCB
-struct Disk_Queue *diskQueue;              //Disk Table
+struct Disk_Queue *diskQueue;             //Disk Table
+struct Frame_Map_Table *frameMapTable;     //Frame Map Table
 
 /*********************PCB Table************************/
 //PCB Table is a linded list, PCB is only allowed to
@@ -187,3 +188,17 @@ void enDiskQueue(struct DISK_OP *DiskOp);
 struct Process_Control_Block *deDiskQueue(long DiskID);
 void lockDiskQueue();
 void unlockDiskQueue();
+/*******************************************************/
+
+/********************FrameMapTable**********************/
+struct Frame_Map {
+	int PID;
+	long pageNumber;
+};
+
+struct Frame_Map_Table {
+	struct Frame_Map *frameMap[PHYS_MEM_PGS];
+};
+
+void initFrameMapTable();
+void writeFrameMapTable(int frameNumber, int PID, long pageNumber);

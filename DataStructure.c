@@ -599,3 +599,22 @@ void unlockDiskQueue() {
 		&LockResult);
 }
 /*******************************************************/
+
+/********************FrameMapTable**********************/
+void initFrameMapTable() {
+	frameMapTable = (struct Frame_Map_Table*)malloc(sizeof(struct Frame_Map_Table));
+
+	for (int i = 0; i < PHYS_MEM_PGS; i++) {
+		frameMapTable->frameMap[i] = NULL;
+	}
+}
+
+void writeFrameMapTable(int frameNumber, int PID, long pageNumber) {
+	if (frameMapTable->frameMap[frameNumber] == NULL) {
+		struct Frame_Map *newFrameMap = (struct Frame_Map*)malloc(sizeof(struct Frame_Map));
+		frameMapTable->frameMap[frameNumber] = newFrameMap;
+	}
+
+	frameMapTable->frameMap[frameNumber]->PID = PID;
+	frameMapTable->frameMap[frameNumber]->pageNumber = pageNumber;
+}

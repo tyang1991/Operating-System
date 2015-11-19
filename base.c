@@ -569,6 +569,7 @@ void osInit(int argc, char *argv[]) {
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	//init memory
 	initMemory();
+	void initFrameMapTable();
 
   // Demonstrates how calling arguments are passed thru to here       
 
