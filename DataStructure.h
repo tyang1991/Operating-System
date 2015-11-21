@@ -57,7 +57,8 @@ struct Process_Control_Block  {
 	long         WakeUpTime;
 	int          Priority;
 	long*        TestToRun;
-	void*        PageTableAddress;
+	void*        PageTable;
+	void*        ShadowPageTable;
 };
 //PCB table element
 struct PCB_Table_Element {
@@ -192,8 +193,9 @@ void unlockDiskQueue();
 
 /********************FrameMapTable**********************/
 struct Frame_Map {
-	int PID;
+	struct Process_Control_Block *PCB;
 	long pageNumber;
+	long frameNumber;
 };
 
 struct Frame_Map_Table {
@@ -201,4 +203,4 @@ struct Frame_Map_Table {
 };
 
 void initFrameMapTable();
-void writeFrameMapTable(int frameNumber, int PID, long pageNumber);
+void writeFrameMapTable(int frameNumber, struct Process_Control_Block *PCB, long pageNumber);

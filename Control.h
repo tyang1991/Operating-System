@@ -43,4 +43,6 @@ void DiskWrite(long DiskID, long Sector, char *DataWritten);
 void DiskRead(long DiskID, long Sector, char *DataRead);
 int DiskStatus(long DiskID);
 void ClearInterruptStatus(long DeviceID);
+INT16 GetFreeDiskAddress(int PID, long pageNumber);
+struct Frame_Map *GetVictimPageTable();
 /*****************************************************************************/

@@ -201,7 +201,9 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 		*ErrorReturned = ERR_SUCCESS;
 	}
 
-	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
+//	void *PageTable = (void *)calloc(2, VIRTUAL_MEM_PAGES);
+	void *PageTable = (void *)calloc(VIRTUAL_MEM_PAGES, 2);
+	void *ShadowPageTable = (void *)calloc(VIRTUAL_MEM_PAGES, 2);
 	MEMORY_MAPPED_IO mmio;
 	//create a new PCB and allocate memory
 	struct Process_Control_Block *newPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
@@ -223,7 +225,8 @@ struct Process_Control_Block *OSCreateProcess(long *ProcessName, long *Test_To_R
 	newPCB->ProcessState = PCB_STATE_LIVE;
 	newPCB->ProcessLocation = PCB_LOCATION_FLOATING;
 	newPCB->TestToRun = Test_To_Run;
-	newPCB->PageTableAddress = PageTable;
+	newPCB->PageTable = PageTable;
+	newPCB->ShadowPageTable = ShadowPageTable;
 	*ProcessID = newPCB->ProcessID;
 
 	//return the PCB created
@@ -437,5 +440,14 @@ void ClearInterruptStatus(long DeviceID) {
 	mmio.Field1 = DeviceID;
 	mmio.Field2 = mmio.Field3 = 0;
 	MEM_WRITE(Z502InterruptDevice, &mmio);
+}
+
+INT16 GetFreeDiskAddress(int PID, long pageNumber) {
+	INT16 diskAddr = (PID + 1) * 4096 + pageNumber;
+	return diskAddr;
+}
+
+struct Frame_Map *GetVictimPageTable() {
+	return frameMapTable->frameMap[0];
 }
 /*****************************************************************************/

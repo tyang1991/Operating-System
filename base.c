@@ -100,6 +100,13 @@ void InterruptHandler(void) {
 void FaultHandler(void) {
 	INT32 DeviceID;
 	INT32 Status;
+	char DataReadFromMemory[PGSIZE];
+	INT32 freeDisk;
+	INT32 freeDiskID;
+	INT32 freeDiskSector;
+	INT16 *victimShadowPageTable;
+	INT16 victimShadowPage;
+
 
 	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
 
@@ -117,27 +124,67 @@ void FaultHandler(void) {
 	}
 
 	//if Sbit = 1
+	//    get victim frame when (Vbit == 1, Rbit == 0)
+	//    if Sbit == 0
+	//        Z502ReadPhysicalMemory
+	//        get free DiskID & Sector
+	//        DISK_WRITE
+	//        write victim's ShadowPageTable
+	//        Sbit = 1
+	//    else
+	//        Z502ReadPhysicalMemory
+	//        get DiskID & Sector from ShadowPageTable
+	//        DISK_WRITE
+	//    Vbit = 0
+	//    change frame table map to NULL
+	//    change victim's pageTable (Vbit = 0, Rbit = 0, pageNumber = 0)
+
 	//    get DiskID & Sector from ShadowPageTable
 	//    DISK_READ
-	//    Vbit = 0, Rbit = 1, Sbit = 0
-
-	//    get victim frame when (Vbit = 1, Rbit = 0, Sbit = 0)
-	//    Z502ReadPhysicalMemory
-	//    get free DiskID & Sector
-	//    DISK_WRITE
-	//    change victim's pageTable (Vbit = 0, Vbit = 1, Sbit = 1)
-	//    write victim's ShadowPageTable
-
 	//    Z502WritePhysicalMemory
+	//    Vbit = 1, Rbit = 1
 
-	//write frameTable(frame number, Vbit = 1, Rbit = 1, Sbit = 0)
+	//write frameTable(PID, pageNumber)
+	//write pageTable(frame number, Vbit = 1, Rbit = 1)
 
+	/*********************************************************************/
 	struct Process_Control_Block *currentPCB = CurrentPCB();
-	INT16 *currentPageTable = (INT16 *)currentPCB->PageTableAddress;
+	INT16 *currentPageTable = (INT16 *)currentPCB->PageTable;
+	
+	INT16 Sbit_Current = (currentPageTable[Status] | 0x1000) / 4096; //get Sbit
+	if (Sbit_Current == 1) {
+		//get victim frame
+		struct Frame_Map *victimFrame = GetVictimFrame();
+		//get victim page
+		INT16 *victimPageTable = (INT16 *)victimFrame->PCB->PageTable;
+		INT16 victimPage = victimPageTable[victimFrame->pageNumber];
+		//make a copy into disk
+		int Sbit_Victim = (victimPage | 0x1000) / 4096;
+		if (Sbit_Victim == 0) {
+			//read from physical memory
+			Z502WritePhysicalMemory(victimFrame->frameNumber, (char *)DataReadFromMemory);
+			//get free DiskID & Sector
+			freeDisk = GetFreeDiskAddress(CurrentPID(), Status);
+			freeDiskID = freeDisk / 4096;
+			freeDiskSector = freeDisk | 0x0FFF;
+			//DISK_WRITE
+			DISK_WRITE(freeDiskID, freeDiskSector, (char *)DataReadFromMemory);
+			//write victim's ShadowPageTable
+			victimShadowPageTable = (INT16*)victimFrame->PCB->ShadowPageTable;
+			victimShadowPage = victimShadowPageTable[victimFrame->pageNumber];
+
+		}
+	}
+
+
+	/*********************************************************************/
+/*
+	struct Process_Control_Block *currentPCB = CurrentPCB();
+	INT16 *currentPageTable = (INT16 *)currentPCB->PageTable;
 	currentPageTable[Status] = currentPageTable[Status] + NewFrameNumber();
 	//write frame table ***
 	currentPageTable[Status] = currentPageTable[Status] | 0x8000;
-
+*/
 	/******************************************************************/
 
 	// Clear out this device - we're done with it
@@ -569,7 +616,7 @@ void osInit(int argc, char *argv[]) {
 	currentPCB = (struct Process_Control_Block*)malloc(sizeof(struct Process_Control_Block));
 	//init memory
 	initMemory();
-	void initFrameMapTable();
+	initFrameMapTable();
 
   // Demonstrates how calling arguments are passed thru to here       
 

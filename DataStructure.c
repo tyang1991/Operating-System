@@ -609,12 +609,13 @@ void initFrameMapTable() {
 	}
 }
 
-void writeFrameMapTable(int frameNumber, int PID, long pageNumber) {
+void writeFrameMapTable(int frameNumber, struct Process_Control_Block *PCB, long pageNumber) {
 	if (frameMapTable->frameMap[frameNumber] == NULL) {
 		struct Frame_Map *newFrameMap = (struct Frame_Map*)malloc(sizeof(struct Frame_Map));
 		frameMapTable->frameMap[frameNumber] = newFrameMap;
 	}
 
-	frameMapTable->frameMap[frameNumber]->PID = PID;
+	frameMapTable->frameMap[frameNumber]->PCB = PCB;
 	frameMapTable->frameMap[frameNumber]->pageNumber = pageNumber;
+	frameMapTable->frameMap[frameNumber]->frameNumber = frameNumber;
 }
