@@ -391,6 +391,15 @@ int NewFrameNumber() {
 	}
 }
 
+int FrameIsFull() {
+	if (NewPTNumber == 64) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 void StartDiskOp(struct DISK_OP *DiskOp) {
 	if (DiskOp->Disk_Operation == DISK_OPERATION_WRITE) {
 		DiskWrite(DiskOp->DiskID, DiskOp->Sector, DiskOp->Data);

@@ -50,7 +50,7 @@ void InterruptHandler(void) {
 	INT32 DeviceID;
 //	INT32 Status;
 	struct Process_Control_Block *tmpPCB;
-	long DiskID;
+	INT32 DiskID;
 
 	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
 
@@ -100,12 +100,17 @@ void InterruptHandler(void) {
 void FaultHandler(void) {
 	INT32 DeviceID;
 	INT32 Status;
-	char DataReadFromMemory[PGSIZE];
-	INT32 freeDisk;
-	INT32 freeDiskID;
-	INT32 freeDiskSector;
+	char DataReadFromMemory[PGSIZE] = calloc(PGSIZE, sizeof(char));//need?
+	INT16 victimDisk;
+	INT16 victimDiskID;
+	INT16 victimDiskSector;
 	INT16 *victimShadowPageTable;
 	INT16 victimShadowPage;
+	INT16 *victimPageTable;
+	INT16 victimPage;
+	INT16 victimPageNumber;
+	struct Process_Control_Block * victimPCB;
+	INT16 victimFrameNumber;
 
 
 	MEMORY_MAPPED_IO mmio;       // Enables communication with hardware
@@ -123,57 +128,80 @@ void FaultHandler(void) {
 		HaltProcess();
 	}
 
-	//if Sbit = 1
-	//    get victim frame when (Vbit == 1, Rbit == 0)
-	//    if Sbit == 0
+	//if GetFreeFrameNumber == -1
+	//    GetVictimFrame when (Vbit_Victim == 1, Rbit_Victim == 0)
+	//    if Sbit_Victim == 0
 	//        Z502ReadPhysicalMemory
 	//        get free DiskID & Sector
 	//        DISK_WRITE
 	//        write victim's ShadowPageTable
-	//        Sbit = 1
+	//        Sbit_Victim = 1
 	//    else
 	//        Z502ReadPhysicalMemory
 	//        get DiskID & Sector from ShadowPageTable
 	//        DISK_WRITE
-	//    Vbit = 0
-	//    change frame table map to NULL
-	//    change victim's pageTable (Vbit = 0, Rbit = 0, pageNumber = 0)
 
+	//    change frame table map to NULL
+	//    change victim's pageTable (0x1000, only Sbit_Victim == 1)
+
+	//GetFreeFrameNumber
+	//write frameTable
+	//write pageTable(frame number, Vbit = 1, Rbit = 1, Sbit = 0)
+
+	//if Sbit_Current = 1
 	//    get DiskID & Sector from ShadowPageTable
 	//    DISK_READ
 	//    Z502WritePhysicalMemory
-	//    Vbit = 1, Rbit = 1
 
-	//write frameTable(PID, pageNumber)
-	//write pageTable(frame number, Vbit = 1, Rbit = 1)
 
 	/*********************************************************************/
 	struct Process_Control_Block *currentPCB = CurrentPCB();
 	INT16 *currentPageTable = (INT16 *)currentPCB->PageTable;
 	
-	INT16 Sbit_Current = (currentPageTable[Status] | 0x1000) / 4096; //get Sbit
+	INT16 Sbit_Current = (currentPageTable[Status] & 0x1000) / 4096; //get Sbit
 	if (Sbit_Current == 1) {
 		//get victim frame
 		struct Frame_Map *victimFrame = GetVictimFrame();
+		victimPageTable = (INT16 *)victimFrame->PCB->PageTable;
+		victimPageNumber = victimFrame->pageNumber;
+		victimPCB = victimFrame->PCB;
+		victimFrameNumber = victimFrame->frameNumber;
 		//get victim page
-		INT16 *victimPageTable = (INT16 *)victimFrame->PCB->PageTable;
-		INT16 victimPage = victimPageTable[victimFrame->pageNumber];
+		victimPage = victimPageTable[victimPageNumber];
 		//make a copy into disk
-		int Sbit_Victim = (victimPage | 0x1000) / 4096;
+		int Sbit_Victim = (victimPage & 0x1000) / 4096;
 		if (Sbit_Victim == 0) {
 			//read from physical memory
-			Z502WritePhysicalMemory(victimFrame->frameNumber, (char *)DataReadFromMemory);
+			Z502ReadPhysicalMemory(victimFrameNumber, (char *)DataReadFromMemory);
 			//get free DiskID & Sector
-			freeDisk = GetFreeDiskAddress(CurrentPID(), Status);
-			freeDiskID = freeDisk / 4096;
-			freeDiskSector = freeDisk | 0x0FFF;
+			victimDisk = GetFreeDiskAddress(CurrentPID(), Status);
+			victimDiskID = victimDisk / 4096;
+			victimDiskSector = victimDisk & 0x0FFF;
 			//DISK_WRITE
-			DISK_WRITE(freeDiskID, freeDiskSector, (char *)DataReadFromMemory);
+			DISK_WRITE(victimDiskID, victimDiskSector, (char *)DataReadFromMemory);
 			//write victim's ShadowPageTable
 			victimShadowPageTable = (INT16*)victimFrame->PCB->ShadowPageTable;
-			victimShadowPage = victimShadowPageTable[victimFrame->pageNumber];
-
+			victimShadowPageTable[victimFrameNumber] = victimDisk;
+			//Sbit_Victim set to 1
+			victimPageTable[victimFrameNumber] = victimPageTable[victimFrameNumber] | 0x1000;
 		}
+		else {
+			//read from physical memory
+			Z502ReadPhysicalMemory(victimFrameNumber, (char *)DataReadFromMemory);
+			//get DiskID & Sector from ShadowPageTable
+			victimShadowPageTable = (INT16*)victimPCB->ShadowPageTable;
+			victimShadowPage = victimShadowPageTable[victimPage];
+			victimDisk = victimShadowPage;
+			victimDiskID = victimDisk / 4096;
+			victimDiskSector = victimDisk & 0x0FFF;
+			//DISK_WRITE
+			DISK_WRITE(victimDiskID, victimDiskSector, (char *)DataReadFromMemory);
+		}
+
+		//change frame table map to NULL
+		frameMapTable->frameMap[victimFrameNumber] = NULL;
+		//change victim's pageTable (Vbit_Victim = 0, Rbit_Victim = 0, FrameNumber = 0)
+		victimPageTable[victimPageNumber] = 0x1000;
 	}
 
 
