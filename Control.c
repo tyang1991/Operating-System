@@ -378,6 +378,7 @@ void unlockTimer() {
 /******************************Memory Control*********************************/
 void initMemory() {
 	NewPTNumber = 0;
+	victimCheckingPosition = 0;
 }
 
 int NewFrameNumber() {
@@ -389,6 +390,16 @@ int NewFrameNumber() {
 		NewPTNumber = NewPTNumber + 1;
 		return NewPTNumber - 1;
 	}
+}
+
+int GetFreeFrameNumber() {
+	for (int i = 0; i < PHYS_MEM_PGS; i++) {
+		if (frameMapTable->frameMap[i] == NULL) {
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 int FrameIsFull() {
@@ -409,7 +420,7 @@ void StartDiskOp(struct DISK_OP *DiskOp) {
 	}
 }
 
-void DiskWrite(long DiskID, long Sector, char *DataWritten) {
+void DiskWrite(INT16 DiskID, INT16 Sector, char *DataWritten) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	mmio.Mode = Z502DiskWrite;
 	mmio.Field1 = DiskID;   // You pick the time units
@@ -418,7 +429,7 @@ void DiskWrite(long DiskID, long Sector, char *DataWritten) {
 	MEM_WRITE(Z502Disk, &mmio);
 }
 
-void DiskRead(long DiskID, long Sector, char *DataRead) {
+void DiskRead(INT16 DiskID, INT16 Sector, char *DataRead) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	mmio.Mode = Z502DiskRead;
 	mmio.Field1 = DiskID;   // You pick the time units
@@ -427,7 +438,7 @@ void DiskRead(long DiskID, long Sector, char *DataRead) {
 	MEM_WRITE(Z502Disk, &mmio);
 }
 
-int DiskStatus(long DiskID) {
+int DiskStatus(INT16 DiskID) {
 	MEMORY_MAPPED_IO mmio;    //for hardware interface
 	mmio.Mode = Z502Status;
 	mmio.Field1 = DiskID;   // You pick the time units
@@ -451,12 +462,34 @@ void ClearInterruptStatus(long DeviceID) {
 	MEM_WRITE(Z502InterruptDevice, &mmio);
 }
 
-INT16 GetFreeDiskAddress(int PID, long pageNumber) {
-	INT16 diskAddr = (PID + 1) * 4096 + pageNumber;
+INT16 GetFreeDiskAddress(int PID, INT16 pageNumber) {
+	INT16 diskAddr = (PID + 1) * 4096 + (INT16)pageNumber;
 	return diskAddr;
 }
 
-struct Frame_Map *GetVictimPageTable() {
-	return frameMapTable->frameMap[0];
+struct Frame_Map *GetVictimFrame() {
+	INT16 *checkingPageTable;
+	INT16 checkingPageNumber;
+	INT16 checkingPage;
+	INT16 Rbit;
+	//LRU approximation
+	for (int i = 0; i < PHYS_MEM_PGS; i++) {
+		//get checking information
+		checkingPageTable = (INT16*)frameMapTable->frameMap[victimCheckingPosition]->PCB->PageTable;
+		checkingPageNumber = frameMapTable->frameMap[victimCheckingPosition]->pageNumber;
+		checkingPage = checkingPageTable[checkingPageNumber];
+		Rbit = (checkingPage & 0x2000) / 8192;
+		//if Rbit == 1, set to 0; if Rbit == 0, it's victim
+		if (Rbit == 0) {
+			return frameMapTable->frameMap[victimCheckingPosition];
+		}
+		else {
+			checkingPageTable[checkingPageNumber] = checkingPageTable[checkingPageNumber] & 0xDFFF;
+		}
+		//move forward
+		victimCheckingPosition = (victimCheckingPosition + 1) % PHYS_MEM_PGS;
+	}
+	//if all 0, take the first
+	return frameMapTable->frameMap[victimCheckingPosition];
 }
 /*****************************************************************************/

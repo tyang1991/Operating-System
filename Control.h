@@ -35,15 +35,17 @@ void unlockTimer();
 
 /******************************Memory Control*********************************/
 int NewPTNumber;
+int victimCheckingPosition;
 
 void initMemory();
 int NewFrameNumber();
+int GetFreeFrameNumber();
 int FrameIsFull();
 void StartDiskOp(struct DISK_OP *DiskOp);
-void DiskWrite(long DiskID, long Sector, char *DataWritten);
-void DiskRead(long DiskID, long Sector, char *DataRead);
-int DiskStatus(long DiskID);
+void DiskWrite(INT16 DiskID, INT16 Sector, char *DataWritten);
+void DiskRead(INT16 DiskID, INT16 Sector, char *DataRead);
+int DiskStatus(INT16 DiskID);
 void ClearInterruptStatus(long DeviceID);
-INT16 GetFreeDiskAddress(int PID, long pageNumber);
-struct Frame_Map *GetVictimPageTable();
+INT16 GetFreeDiskAddress(int PID, INT16 pageNumber);
+struct Frame_Map *GetVictimFrame();
 /*****************************************************************************/

@@ -166,9 +166,9 @@ void unlockMessageTable();
 
 /**********************DISK*****************************/
 struct DISK_OP {
-	int Disk_Operation;
-	long DiskID;
-	long Sector;
+	INT16 Disk_Operation;
+	INT16 DiskID;
+	INT16 Sector;
 	char *Data;
 	struct Process_Control_Block *PCB;
 };
@@ -194,8 +194,8 @@ void unlockDiskQueue();
 /********************FrameMapTable**********************/
 struct Frame_Map {
 	struct Process_Control_Block *PCB;
-	long pageNumber;
-	long frameNumber;
+	INT16 pageNumber;
+	INT16 frameNumber;
 };
 
 struct Frame_Map_Table {
