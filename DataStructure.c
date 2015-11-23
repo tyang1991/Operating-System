@@ -531,7 +531,7 @@ void initDiskQueue() {
 	}
 }
 
-struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, struct Process_Control_Block *PCB) {
+struct DISK_OP *CreateDiskOp(INT16 DiskOp, INT16 DiskID, INT16 Sector, char *Data, struct Process_Control_Block *PCB) {
 	struct DISK_OP *newDiskOp = (struct DISK_OP*)malloc(sizeof(struct DISK_OP));
 	newDiskOp->Disk_Operation = DiskOp;
 	newDiskOp->DiskID = DiskID;
@@ -563,7 +563,7 @@ void enDiskQueue(struct DISK_OP *DiskOp) {
 	unlockDiskQueue();
 }
 
-struct Process_Control_Block *deDiskQueue(long DiskID) {
+struct Process_Control_Block *deDiskQueue(INT16 DiskID) {
 	lockDiskQueue();
 
 	struct Process_Control_Block *returnedDiskOp;
@@ -609,7 +609,7 @@ void initFrameMapTable() {
 	}
 }
 
-void writeFrameMapTable(int frameNumber, struct Process_Control_Block *PCB, long pageNumber) {
+void writeFrameMapTable(INT16 frameNumber, struct Process_Control_Block *PCB, INT16 pageNumber) {
 	if (frameMapTable->frameMap[frameNumber] == NULL) {
 		struct Frame_Map *newFrameMap = (struct Frame_Map*)malloc(sizeof(struct Frame_Map));
 		frameMapTable->frameMap[frameNumber] = newFrameMap;

@@ -63,7 +63,7 @@ void InterruptHandler(void) {
 	MEM_READ(Z502InterruptDevice, &mmio);
 	DeviceID = mmio.Field1;
 	//Status = mmio.Field2;
-
+	printf("INTERRUPT\n");
 /////////////////////////Code go here////////////////////////////////////
 	if (DeviceID == TIMER_INTERRUPT) {
 		//take all timeout PCB from timer queue and put into ready queue
@@ -73,6 +73,7 @@ void InterruptHandler(void) {
 		} while (ResetTimer() == 0);
 	}
 	else if (DeviceID >= DISK_INTERRUPT && DeviceID <= DISK_INTERRUPT+7){
+		printf("DISK_INTERRUPT\n");
 		//Disk ID from 1 to 8, disk interrupt from 5+0 to 5+7
 		DiskID = DeviceID - DISK_INTERRUPT + 1;
 //		printf("DISK_INTERRUPT: DiskID %d\n", DiskID);
@@ -206,13 +207,12 @@ void FaultHandler(void) {
 
 	//GetFreeFrameNumber
 	freeFrameNumber = GetFreeFrameNumber();
-	//write frame table
-	writeFrameMapTable(freeFrameNumber, CurrentPCB(), Status);
 	//write pageTable
-	struct Process_Control_Block *currentPCB = CurrentPCB();
 	INT16 *currentPageTable = (INT16 *)currentPCB->PageTable;
 	INT16 Sbit_Current = (currentPageTable[Status] & 0x1000) / 4096; //get Sbit
 	currentPageTable[Status] = 0xA000 + freeFrameNumber + Sbit_Current * 4096;
+	//write frame table
+	writeFrameMapTable(freeFrameNumber, currentPCB, Status);
 
 	if (Sbit_Current == 1) {
 		//get DiskID & Sector from ShadowPageTable
@@ -226,9 +226,6 @@ void FaultHandler(void) {
 		Z502WritePhysicalMemory(freeFrameNumber, (char*)DataBuffer);
 	}
 
-
-
-	
 	/*********************************************************************/
 /*
 	struct Process_Control_Block *currentPCB = CurrentPCB();
@@ -238,11 +235,7 @@ void FaultHandler(void) {
 	currentPageTable[Status] = currentPageTable[Status] | 0x8000;
 */
 	/******************************************************************/
-
-	// Clear out this device - we're done with it
-	mmio.Mode = Z502ClearInterruptStatus;
-	mmio.Field1 = DeviceID;
-	MEM_WRITE(Z502InterruptDevice, &mmio);
+	ClearInterruptStatus(DeviceID);
 } // End of FaultHandler
 
 /************************************************************************
@@ -612,8 +605,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			SchedularPrinter("ReceiveMsg", CurrentPID());
 			break;
 		case SYSNUM_DISK_WRITE:
-			DiskID = (long)SystemCallData->Argument[0];
-			Sector = (long)SystemCallData->Argument[1];
+			DiskID = (INT16)SystemCallData->Argument[0];
+			Sector = (INT16)SystemCallData->Argument[1];
 			DataWritten = (char *)SystemCallData->Argument[2];
 
 			newDiskOp = CreateDiskOp(DISK_OPERATION_WRITE, DiskID, Sector,
@@ -627,8 +620,8 @@ void svc(SYSTEM_CALL_DATA *SystemCallData) {
 			Dispatcher();
 			break;
 		case SYSNUM_DISK_READ:
-			DiskID = (long)SystemCallData->Argument[0];
-			Sector = (long)SystemCallData->Argument[1];
+			DiskID = (INT16)SystemCallData->Argument[0];
+			Sector = (INT16)SystemCallData->Argument[1];
 			DataRead = (char *)SystemCallData->Argument[2];
 
 			newDiskOp = CreateDiskOp(DISK_OPERATION_READ, DiskID, Sector,

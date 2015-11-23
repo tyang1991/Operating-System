@@ -184,9 +184,9 @@ struct Disk_Queue{
 };
 
 void initDiskQueue();
-struct DISK_OP *CreateDiskOp(int DiskOp, long DiskID, long Sector, char *Data, struct Process_Control_Block *PCB);
+struct DISK_OP *CreateDiskOp(INT16 DiskOp, INT16 DiskID, INT16 Sector, char *Data, struct Process_Control_Block *PCB);
 void enDiskQueue(struct DISK_OP *DiskOp);
-struct Process_Control_Block *deDiskQueue(long DiskID);
+struct Process_Control_Block *deDiskQueue(INT16 DiskID);
 void lockDiskQueue();
 void unlockDiskQueue();
 /*******************************************************/
@@ -203,4 +203,4 @@ struct Frame_Map_Table {
 };
 
 void initFrameMapTable();
-void writeFrameMapTable(int frameNumber, struct Process_Control_Block *PCB, long pageNumber);
+void writeFrameMapTable(INT16 frameNumber, struct Process_Control_Block *PCB, INT16 pageNumber);
